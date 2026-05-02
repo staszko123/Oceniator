@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)http://localhost:3333/karta_oceny_v5_sidebar.html -->
-<html lang="pl" data-theme="dark"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="pl" data-theme="light">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>System Oceny Jakości | PeP &amp; P24</title>
-<link href="./System Oceny Jakości _ PeP &amp; P24_files/css2" rel="stylesheet">
-<script src="./System Oceny Jakości _ PeP &amp; P24_files/chart.umd.min.js.pobrane"></script>
+<title>System Oceny Jakości | PeP & P24</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════
@@ -587,7 +587,19 @@ html,body{overflow:hidden}
 .dash-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
 .dw-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
 .dw-sub{font-size:10px;color:var(--text3);font-weight:400}
-.ch200{position:relative;height:200px}.ch240{position:relative;height:240px}.ch260{position:relative;height:260px}
+.ch200{position:relative;height:200px}.ch240,.ch260,.ch-std{position:relative;height:260px}
+.dw-body{max-height:280px;overflow-y:auto}
+/* COMPARISON WIDGET */
+.cmp-picks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);align-items:center}
+.cmp-pick{display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid var(--border2);font-size:10px;font-weight:500;color:var(--text2);background:var(--surface);transition:all .12s;white-space:nowrap;font-family:'Poppins',sans-serif}
+.cmp-pick:hover{border-color:var(--teal);color:var(--teal)}
+.cmp-pick.on{color:#fff}
+.cmp-pick.disabled{opacity:.35;pointer-events:none;cursor:default}
+.cmp-types{display:flex;gap:5px;align-items:center;margin-bottom:10px}
+.cmp-lbl{font-size:10px;font-weight:600;color:var(--text3);margin-right:4px}
+.cmp-tbtn{padding:3px 10px;border-radius:20px;border:1.5px solid var(--border2);font-size:10px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text2);transition:all .12s;font-family:'Poppins',sans-serif}
+.cmp-tbtn.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.cmp-empty{text-align:center;padding:44px 20px;color:var(--text3);font-size:12px}
 .dash-empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:12px}
 .goal-list{display:flex;flex-direction:column;gap:7px}
 .goal-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
@@ -701,7 +713,7 @@ html,body{overflow:hidden}
     <label>Nazwa arkusza (opcjonalnie)</label>
     <input type="text" id="sp-sheet" placeholder="np. Ewidencja 2025">
     <div class="modal-btns">
-      <button class="btn btn-outline btn-sm" onclick="closeModal(&#39;sp-modal&#39;)">Anuluj</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('sp-modal')">Anuluj</button>
       <button class="btn btn-primary btn-sm" onclick="saveSpConfig()">Zapisz</button>
     </div>
   </div>
@@ -712,13 +724,13 @@ html,body{overflow:hidden}
   <div class="modal">
     <h3>📥 Import danych ewidencji</h3>
     <p>Wczytaj wcześniej wyeksportowany plik JSON z danymi ewidencji. Istniejące dane mogą zostać zastąpione lub połączone.</p>
-    <div class="import-area" id="import-drop" onclick="document.getElementById(&#39;import-file&#39;).click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+    <div class="import-area" id="import-drop" onclick="document.getElementById('import-file').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
       <div style="font-size:28px;margin-bottom:8px">📂</div>
       <div>Kliknij lub przeciągnij plik <strong>.json</strong> lub <strong>.csv</strong></div>
       <input type="file" id="import-file" accept=".json,.csv" onchange="handleImportFile(event)">
     </div>
     <div class="modal-btns">
-      <button class="btn btn-outline btn-sm" onclick="closeModal(&#39;import-modal&#39;)">Anuluj</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('import-modal')">Anuluj</button>
     </div>
   </div>
 </div>
@@ -731,8 +743,23 @@ html,body{overflow:hidden}
     <label>Uwagi ogólne / podsumowanie</label>
     <textarea id="edit-notes" rows="5" placeholder="Uwagi..."></textarea>
     <div class="modal-btns">
-      <button class="btn btn-outline btn-sm" onclick="closeModal(&#39;edit-modal&#39;)">Anuluj</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Anuluj</button>
       <button class="btn btn-primary btn-sm" onclick="saveEditNotes()">Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="score-edit-modal" onclick="if(event.target===this)closeModal('score-edit-modal')">
+  <div class="modal se-modal">
+    <h3>🎯 Edycja ocen</h3>
+    <div id="score-edit-body"></div>
+    <div style="margin-top:14px">
+      <label style="display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:5px">Uwagi ogólne</label>
+      <textarea id="score-edit-gnotes" rows="3" placeholder="Uwagi ogólne / podsumowanie..."></textarea>
+    </div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('score-edit-modal')">Anuluj</button>
+      <button class="btn btn-primary btn-sm" onclick="saveScoreEdit()">💾 Zapisz zmiany</button>
     </div>
   </div>
 </div>
@@ -746,19 +773,19 @@ html,body{overflow:hidden}
   </div>
   <div class="sb-nav">
     <div class="sb-sec-lbl">Formularze</div>
-    <div class="sb-item on" id="sbi-rozmowy" onclick="switchTab(&#39;rozmowy&#39;,this)"><span class="sb-icon">📞</span><span class="sb-label">Ocena Rozmów</span><span class="sb-tip">Ocena Rozmów</span></div>
-    <div class="sb-item" id="sbi-maile" onclick="switchTab(&#39;maile&#39;,this)"><span class="sb-icon">✉️</span><span class="sb-label">Ocena Maili</span><span class="sb-tip">Ocena Maili</span></div>
-    <div class="sb-item" id="sbi-systemy" onclick="switchTab(&#39;systemy&#39;,this)"><span class="sb-icon">🖥</span><span class="sb-label">Systemy</span><span class="sb-tip">Działania w Systemach</span></div>
+    <div class="sb-item on" id="sbi-rozmowy" onclick="switchTab('rozmowy',this)"><span class="sb-icon">📞</span><span class="sb-label">Ocena Rozmów</span><span class="sb-tip">Ocena Rozmów</span></div>
+    <div class="sb-item" id="sbi-maile" onclick="switchTab('maile',this)"><span class="sb-icon">✉️</span><span class="sb-label">Ocena Maili</span><span class="sb-tip">Ocena Maili</span></div>
+    <div class="sb-item" id="sbi-systemy" onclick="switchTab('systemy',this)"><span class="sb-icon">🖥</span><span class="sb-label">Systemy</span><span class="sb-tip">Działania w Systemach</span></div>
     <div class="sb-sec-lbl">Analityka</div>
-    <div class="sb-item" id="sbi-dashboard" onclick="switchTab(&#39;dashboard&#39;,this)"><span class="sb-icon">📈</span><span class="sb-label">Dashboard</span><span class="sb-tip">Dashboard</span></div>
-    <div class="sb-item" id="sbi-ewidencja" onclick="switchTab(&#39;ewidencja&#39;,this)"><span class="sb-icon">📋</span><span class="sb-label">Ewidencja</span><span class="sb-badge" id="ew-badge">30</span><span class="sb-tip">Ewidencja kart</span></div>
-    <div class="sb-item" id="sbi-raporty" onclick="switchTab(&#39;raporty&#39;,this)"><span class="sb-icon">📊</span><span class="sb-label">Raporty</span><span class="sb-tip">Generowanie raportów CSV</span></div>
+    <div class="sb-item" id="sbi-dashboard" onclick="switchTab('dashboard',this)"><span class="sb-icon">📈</span><span class="sb-label">Dashboard</span><span class="sb-tip">Dashboard</span></div>
+    <div class="sb-item" id="sbi-ewidencja" onclick="switchTab('ewidencja',this)"><span class="sb-icon">📋</span><span class="sb-label">Ewidencja</span><span class="sb-badge" id="ew-badge">0</span><span class="sb-tip">Ewidencja kart</span></div>
+    <div class="sb-item" id="sbi-raporty" onclick="switchTab('raporty',this)"><span class="sb-icon">📊</span><span class="sb-label">Raporty</span><span class="sb-tip">Generowanie raportów CSV</span></div>
     <div class="sb-sec-lbl">Administracja</div>
-    <div class="sb-item" id="sbi-admin" onclick="switchTab(&#39;admin&#39;,this)"><span class="sb-icon">⚙️</span><span class="sb-label">Panel Admina</span><span class="sb-tip">Panel administracyjny</span></div>
+    <div class="sb-item" id="sbi-admin" onclick="switchTab('admin',this)"><span class="sb-icon">⚙️</span><span class="sb-label">Panel Admina</span><span class="sb-tip">Panel administracyjny</span></div>
   </div>
   <div class="sb-footer">
-    <button class="sb-fbtn" onclick="toggleTheme()"><span class="sb-icon" id="theme-icon">☀️</span><span class="sb-label">Motyw</span></button>
-    <button class="sb-fbtn" onclick="openModal(&#39;sp-modal&#39;)"><span class="sb-icon">🔗</span><span class="sb-label">SharePoint</span></button>
+    <button class="sb-fbtn" onclick="toggleTheme()"><span class="sb-icon" id="theme-icon">🌙</span><span class="sb-label">Motyw</span></button>
+    <button class="sb-fbtn" onclick="openModal('sp-modal')"><span class="sb-icon">🔗</span><span class="sb-label">SharePoint</span></button>
     <button class="sb-fbtn" onclick="confirmReset()"><span class="sb-icon">↺</span><span class="sb-label">Wyczyść formularz</span></button>
     <button class="sb-cbtn" onclick="toggleSidebar()"><span id="sb-chev">◀</span></button>
   </div>
@@ -768,1940 +795,11 @@ html,body{overflow:hidden}
     <div class="page-bar-title" id="page-bar-title">Ocena Rozmów</div>
   </div>
   <main class="main">
-    <div id="tab-rozmowy" class="panel on"><div class="wrap" id="wrap-r">
-    <div id="r-val-banner" style="display:none"></div>
-    <div class="card">
-      <div class="meta-row">
-        <div class="mf"><label>Specjalista</label>
-          <select id="r-spec" onchange="onSpecChange(&#39;r&#39;)">
-              <option value="">— wybierz —</option>
-              <option value="Anna Kowalska">Anna Kowalska</option><option value="Bartosz Nowak">Bartosz Nowak</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Karolina Lewandowska">Karolina Lewandowska</option><option value="Marta Dąbrowska">Marta Dąbrowska</option><option value="Michał Kowalczyk">Michał Kowalczyk</option><option value="Natalia Szymańska">Natalia Szymańska</option><option value="Piotr Wiśniewski">Piotr Wiśniewski</option><option value="Tomasz Zając">Tomasz Zając</option>
-            </select>
-        </div>
-        <div class="mf"><label>Stanowisko</label>
-          <select id="r-stand">
-              <option value="">— wybierz —</option>
-              <option value="Młodszy Specjalista">Młodszy Specjalista</option><option value="Specjalista ds. Obsługi Klienta">Specjalista ds. Obsługi Klienta</option><option value="Specjalista ds. Rozliczeń">Specjalista ds. Rozliczeń</option><option value="Specjalista ds. Systemów">Specjalista ds. Systemów</option><option value="Starszy Specjalista">Starszy Specjalista</option>
-            </select>
-        </div>
-        <div class="mf"><label>Dział</label>
-          <select id="r-dzial">
-              <option value="">— wybierz —</option>
-              <option value="Dział Obsługi PeP">Dział Obsługi PeP</option><option value="Dział Rozliczeń P24">Dział Rozliczeń P24</option><option value="Dział Wsparcia Technicznego">Dział Wsparcia Technicznego</option>
-            </select>
-        </div>
-        <div class="mf"><label>Oceniający</label>
-          <select id="r-oce" onchange="saveOce(this.value)">
-              <option value="">— wybierz —</option>
-              <option value="Agnieszka Maj (TL)" selected="">Agnieszka Maj (TL)</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Jan Kowalczyk (TL)">Jan Kowalczyk (TL)</option><option value="Robert Wróbel (TL)">Robert Wróbel (TL)</option>
-            </select>
-        </div>
-        <div class="mf"><label>Data oceny</label><input type="date" id="r-data" value="2026-05-01" oninput="updatePeriod(&#39;r&#39;)"></div>
-      </div>
-      <div class="contact-bar">
-        <span class="contact-bar-label">Liczba rozmowaów:</span>
-        <button class="cb-btn" onclick="changeCount(&#39;r&#39;,-1)" id="r-btn-minus">−</button>
-        <span class="contact-count" id="r-count">2</span>
-        <button class="cb-btn" onclick="changeCount(&#39;r&#39;,1)" id="r-btn-plus">+</button>
-        <div class="cb-divider"></div>
-        <span id="r-period-badge"><span class="period-badge">📅 P2 2026</span></span>
-      </div>
-      <div class="ids-grid" id="r-ids-grid" style="display:flex">
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Rozmowa 1</div>
-      <input type="text" id="r-id-0" value="" placeholder="ID / dane kontaktu...">
-    </div>
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Rozmowa 2</div>
-      <input type="text" id="r-id-1" value="" placeholder="ID / dane kontaktu...">
-    </div></div>
-      <div class="scale-bar">
-        <div class="sc-item"><span class="sc-chip chip-1">1</span> W pełni spełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-05">½</span> Częściowo</div>
-        <div class="sc-item"><span class="sc-chip chip-0">0</span> Niespełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-nd">N/D</span> Nie dotyczy</div>
-      </div>
-    </div>
-    <div class="sec sec-a" id="r-sec-mery">
-      <div class="sec-hdr" onclick="toggleSec(&#39;r-sec-mery&#39;)">
-        <span class="sec-lbl">I. Merytoryka</span>
-        <span class="sec-wt">waga 45%</span>
-        <span class="sec-score" id="r-ss-mery">7.0 / 7.0 / 7</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:32%">Rozmowa 1</th><th style="width:32%">Rozmowa 2</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Weryfikacja klienta<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-0">Poprawna identyfikacja dzwoniącego zgodnie z obowiązującą procedurą; wymagane pytania weryfikacyjne przed udzieleniem jakichkolwiek informacji.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Znajomość procedur i poprawność merytoryczna<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-1">Informacje zgodne z bazą wiedzy, aktualnymi procedurami oraz wytycznymi przełożonego; brak błędów merytorycznych.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Rozpoznanie potrzeb klienta<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-2&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-2">Specjalista poprawnie identyfikuje powód kontaktu, zadaje właściwe pytania, weryfikuje sprawę przed działaniem; klient nie musi się powtarzać.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,2,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Empatia i nastawienie na klienta<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-3&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-3">Specjalista rozpoznaje emocje klienta i reaguje adekwatnie; okazuje zrozumienie; klient czuje się wysłuchany i zaopiekowany.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,3,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Rozwiązanie sprawy i FTR (First Time Resolution)<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-4&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-4">Działania prowadzące do rozwiązania sprawy podczas jednego kontaktu; skupia się na kompletnym rozwiązaniu; prawidłowy status FTR w systemie.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,4,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Działania uzgodnione z klientem i samodzielność<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-5&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-5">Zlecone działania adekwatne do informacji od klienta; obsługa standardowych spraw samodzielnie, bez zbędnych konsultacji.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,5,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Edukacja i usamodzielnienie klienta<span class="hint-btn" onclick="toggleHint(&#39;h-r-mery-6&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-mery-6">Specjalista przekazuje klientowi wiedzę umożliwiającą samodzielne działanie w przyszłości; autentyczne zaangażowanie; brak proszenia o NPS.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;mery&#39;,6,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 1</div>
-        <textarea class="ntextarea" id="sn-r-mery-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-mery-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-0&#39;,&#39;Brak weryfikacji klienta&#39;)">Brak weryfikacji klienta</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-0&#39;,&#39;Błędna informacja merytoryczna&#39;)">Błędna informacja merytoryczna</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-0&#39;,&#39;Nie rozpoznał potrzeby&#39;)">Nie rozpoznał potrzeby</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-0&#39;,&#39;Brak empatii&#39;)">Brak empatii</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-mery-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 2</div>
-        <textarea class="ntextarea" id="sn-r-mery-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-mery-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-1&#39;,&#39;Brak weryfikacji klienta&#39;)">Brak weryfikacji klienta</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-1&#39;,&#39;Błędna informacja merytoryczna&#39;)">Błędna informacja merytoryczna</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-1&#39;,&#39;Nie rozpoznał potrzeby&#39;)">Nie rozpoznał potrzeby</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-mery-1&#39;,&#39;Brak empatii&#39;)">Brak empatii</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-mery-1&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-b" id="r-sec-jak">
-      <div class="sec-hdr" onclick="toggleSec(&#39;r-sec-jak&#39;)">
-        <span class="sec-lbl">II. Jakość / Komunikacja</span>
-        <span class="sec-wt">waga 45%</span>
-        <span class="sec-score" id="r-ss-jak">7.0 / 7.0 / 7</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:32%">Rozmowa 1</th><th style="width:32%">Rozmowa 2</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Struktura rozmowy (przywitanie, przedstawienie, podsumowanie, pożegnanie)<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-0">Uporządkowana i logiczna rozmowa. Czytelne powitanie i przedstawienie, podsumowanie ustaleń, wskazanie dalszych kroków, uprzejme pożegnanie.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Ton, tempo i atmosfera rozmowy<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-1">Uprzejmy i profesjonalny ton przez cały czas rozmowy. Tempo dostosowane do rozmówcy. Brak oznak zniecierpliwienia, podnoszenia głosu.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawność i zrozumiałość językowa. Zwroty grzecznościowe.<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-2&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-2">Informacje formułowane prosto i jasno. Brak zdrobnień i niewyjaśnionych pojęć specjalistycznych. Używa: „proszę", „dziękuję", „przepraszam".</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,2,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Aktywne słuchanie, dostosowanie się do rozmówcy<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-3&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-3">Specjalista uważnie słucha, reaguje adekwatnie, zadaje pytania doprecyzowujące, potrafi sparafrazować kluczowe kwestie.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,3,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Prowadzenie rozmowy, zarządzanie ciszą<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-4&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-4">Specjalista kontroluje przebieg rozmowy. Nie pozostawia klienta bez kontaktu ponad 2 min. bez uprzedzenia. Informuje o podejmowanych działaniach.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,4,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Język korzyści, pozytywna narracja<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-5&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-5">Komunikaty z językiem korzyści; skupienie na możliwościach dostępnych dla klienta; unikanie negatywnych sformułowań.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,5,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Edukacja klienta<span class="hint-btn" onclick="toggleHint(&#39;h-r-jak-6&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-jak-6">Informuje klienta o dostępnych opcjach lub usprawnieniach. Oferuje wsparcie i wspiera budowanie samodzielności klienta w przyszłości.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;jak&#39;,6,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 1</div>
-        <textarea class="ntextarea" id="sn-r-jak-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-jak-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-0&#39;,&#39;Brak przywitania&#39;)">Brak przywitania</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-0&#39;,&#39;Nieodpowiedni ton&#39;)">Nieodpowiedni ton</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-0&#39;,&#39;Błędy językowe&#39;)">Błędy językowe</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-0&#39;,&#39;Nie słuchał aktywnie&#39;)">Nie słuchał aktywnie</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-jak-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 2</div>
-        <textarea class="ntextarea" id="sn-r-jak-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-jak-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-1&#39;,&#39;Brak przywitania&#39;)">Brak przywitania</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-1&#39;,&#39;Nieodpowiedni ton&#39;)">Nieodpowiedni ton</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-1&#39;,&#39;Błędy językowe&#39;)">Błędy językowe</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-jak-1&#39;,&#39;Nie słuchał aktywnie&#39;)">Nie słuchał aktywnie</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-jak-1&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-c" id="r-sec-sys">
-      <div class="sec-hdr" onclick="toggleSec(&#39;r-sec-sys&#39;)">
-        <span class="sec-lbl">III. Działania w Systemach</span>
-        <span class="sec-wt">waga 10%</span>
-        <span class="sec-score" id="r-ss-sys">2.0 / 2.0 / 2</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:32%">Rozmowa 1</th><th style="width:32%">Rozmowa 2</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawne uzupełnienie skryptu w Altarze (FTR / OTRS)<span class="hint-btn" onclick="toggleHint(&#39;h-r-sys-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-sys-0">Prawidłowy zapis sprawy; status FTR; typ problemu; MID/OID/TID; właściwy dział/usługa; podpisanie zgłoszenia zgodnie z procedurą.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Czas ACW – działania po zakończeniu rozmowy<span class="hint-btn" onclick="toggleHint(&#39;h-r-sys-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-r-sys-1">Czas przeznaczony na działania po rozmowie zgodny z procedurą; Specjalista nie przedłuża zbędnie czasu ACW.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;r&#39;,&#39;sys&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 1</div>
-        <textarea class="ntextarea" id="sn-r-sys-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-sys-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-sys-0&#39;,&#39;Błędny zapis w Altarze&#39;)">Błędny zapis w Altarze</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-sys-0&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-sys-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Rozmowa 2</div>
-        <textarea class="ntextarea" id="sn-r-sys-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-r-sys-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-r-sys-1&#39;,&#39;Błędny zapis w Altarze&#39;)">Błędny zapis w Altarze</span><span class="comment-chip" onclick="appendComment(&#39;sn-r-sys-1&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-r-sys-1&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div>
-    <div class="gold-blk">
-      <div class="gold-ttl">⭐ Złote Punkty <span style="font-size:10px;font-weight:400;color:var(--text3)">— za wyjątkowe zaangażowanie</span></div>
-      <div class="gold-items">
-    <div class="gold-item">
-      <label>Rozmowa 1</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;r&#39;,0,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;r&#39;,0,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;r&#39;,0,1,this)">+1</button>
-      </div></div>
-    <div class="gold-item">
-      <label>Rozmowa 2</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;r&#39;,1,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;r&#39;,1,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;r&#39;,1,1,this)">+1</button>
-      </div></div></div>
-      <div class="gold-desc"><label>Opis sytuacji</label>
-        <textarea id="r-gold-desc" placeholder="Opisz co wyróżniało zachowanie specjalisty..."></textarea>
-      </div>
-    </div>
-    <div class="res-panel">
-      <div class="res-hdr">
-        <span>Wynik końcowy</span>
-      </div>
-      <div class="res-body">
-        <div class="res-grid">
-    <div class="res-box" id="r-rb-0">
-      <div class="res-lbl">Rozmowa 1</div>
-      <div class="res-pct" id="r-rp-0" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="r-rpts-0">16 / 16 pkt</div>
-      <div class="res-badge bg-great" id="r-rbg-0">Bardzo dobry</div>
-    </div>
-    <div class="res-box" id="r-rb-1">
-      <div class="res-lbl">Rozmowa 2</div>
-      <div class="res-pct" id="r-rp-1" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="r-rpts-1">16 / 16 pkt</div>
-      <div class="res-badge bg-great" id="r-rbg-1">Bardzo dobry</div>
-    </div>
-          <div class="res-box final-box">
-            <div class="res-lbl">Wynik końcowy (średnia)</div>
-            <div class="res-pct" id="r-rp-f" style="color: var(--green);">100%</div>
-            <div class="res-pts" id="r-rpts-f">16 / 16 pkt (śr.)</div>
-            <div class="res-badge bg-great" id="r-rbg-f">Bardzo dobry</div>
-          </div>
-        </div>
-        <div class="gen-notes"><label>Uwagi ogólne / podsumowanie oceny</label>
-          <textarea id="r-gnotes" placeholder="Wnioski, plan działania, obszary do rozwoju..."></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="act-bar">
-      <span class="act-bar-txt">Po wypełnieniu — dodaj do ewidencji i wygeneruj kartę dla specjalisty</span>
-      <button class="btn btn-outline btn-sm" onclick="printCard(&#39;r&#39;)">🖨 Drukuj kartę</button>
-      <button class="btn btn-primary" onclick="submitCard(&#39;r&#39;)">➕ Dodaj kartę</button>
-    </div></div></div>
-    <div id="tab-maile" class="panel"><div class="wrap" id="wrap-m">
-    <div id="m-val-banner" style="display:none"></div>
-    <div class="card">
-      <div class="meta-row">
-        <div class="mf"><label>Specjalista</label>
-          <select id="m-spec" onchange="onSpecChange(&#39;m&#39;)">
-              <option value="">— wybierz —</option>
-              <option value="Anna Kowalska">Anna Kowalska</option><option value="Bartosz Nowak">Bartosz Nowak</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Karolina Lewandowska">Karolina Lewandowska</option><option value="Marta Dąbrowska">Marta Dąbrowska</option><option value="Michał Kowalczyk">Michał Kowalczyk</option><option value="Natalia Szymańska">Natalia Szymańska</option><option value="Piotr Wiśniewski">Piotr Wiśniewski</option><option value="Tomasz Zając">Tomasz Zając</option>
-            </select>
-        </div>
-        <div class="mf"><label>Stanowisko</label>
-          <select id="m-stand">
-              <option value="">— wybierz —</option>
-              <option value="Młodszy Specjalista">Młodszy Specjalista</option><option value="Specjalista ds. Obsługi Klienta">Specjalista ds. Obsługi Klienta</option><option value="Specjalista ds. Rozliczeń">Specjalista ds. Rozliczeń</option><option value="Specjalista ds. Systemów">Specjalista ds. Systemów</option><option value="Starszy Specjalista">Starszy Specjalista</option>
-            </select>
-        </div>
-        <div class="mf"><label>Dział</label>
-          <select id="m-dzial">
-              <option value="">— wybierz —</option>
-              <option value="Dział Obsługi PeP">Dział Obsługi PeP</option><option value="Dział Rozliczeń P24">Dział Rozliczeń P24</option><option value="Dział Wsparcia Technicznego">Dział Wsparcia Technicznego</option>
-            </select>
-        </div>
-        <div class="mf"><label>Oceniający</label>
-          <select id="m-oce" onchange="saveOce(this.value)">
-              <option value="">— wybierz —</option>
-              <option value="Agnieszka Maj (TL)" selected="">Agnieszka Maj (TL)</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Jan Kowalczyk (TL)">Jan Kowalczyk (TL)</option><option value="Robert Wróbel (TL)">Robert Wróbel (TL)</option>
-            </select>
-        </div>
-        <div class="mf"><label>Data oceny</label><input type="date" id="m-data" value="2026-05-01" oninput="updatePeriod(&#39;m&#39;)"></div>
-      </div>
-      <div class="contact-bar">
-        <span class="contact-bar-label">Liczba mailów:</span>
-        <button class="cb-btn" onclick="changeCount(&#39;m&#39;,-1)" id="m-btn-minus">−</button>
-        <span class="contact-count" id="m-count">3</span>
-        <button class="cb-btn" onclick="changeCount(&#39;m&#39;,1)" id="m-btn-plus">+</button>
-        <div class="cb-divider"></div>
-        <span id="m-period-badge"><span class="period-badge">📅 P2 2026</span></span>
-      </div>
-      <div class="ids-grid" id="m-ids-grid" style="display:flex">
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Mail 1</div>
-      <input type="text" id="m-id-0" value="" placeholder="ID / dane kontaktu...">
-    </div>
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Mail 2</div>
-      <input type="text" id="m-id-1" value="" placeholder="ID / dane kontaktu...">
-    </div>
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Mail 3</div>
-      <input type="text" id="m-id-2" value="" placeholder="ID / dane kontaktu...">
-    </div></div>
-      <div class="scale-bar">
-        <div class="sc-item"><span class="sc-chip chip-1">1</span> W pełni spełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-05">½</span> Częściowo</div>
-        <div class="sc-item"><span class="sc-chip chip-0">0</span> Niespełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-nd">N/D</span> Nie dotyczy</div>
-      </div>
-    </div>
-    <div class="sec sec-a" id="m-sec-mery">
-      <div class="sec-hdr" onclick="toggleSec(&#39;m-sec-mery&#39;)">
-        <span class="sec-lbl">I. Merytoryka</span>
-        <span class="sec-wt">waga 45%</span>
-        <span class="sec-score" id="m-ss-mery">5.0 / 5.0 / 5.0 / 5</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Mail 1</th><th style="width:21%">Mail 2</th><th style="width:21%">Mail 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Weryfikacja klienta<span class="hint-btn" onclick="toggleHint(&#39;h-m-mery-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-mery-0">Poprawna identyfikacja nadawcy / weryfikacja danych zgodnie z obowiązującą procedurą.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawność merytoryczna odpowiedzi<span class="hint-btn" onclick="toggleHint(&#39;h-m-mery-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-mery-1">Informacje zgodne z bazą wiedzy lub wytycznymi przełożonego; brak błędów merytorycznych.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Rozpoznanie potrzeb i celu kontaktu<span class="hint-btn" onclick="toggleHint(&#39;h-m-mery-2&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-mery-2">Odpowiedź odnosi się do wszystkich pytań klienta; poprawne określenie powodu kontaktu.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,2,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Rozwiązanie sprawy (FTR) i działania uzgodnione z klientem<span class="hint-btn" onclick="toggleHint(&#39;h-m-mery-3&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-mery-3">Odpowiedź adekwatna do potrzeb; działania zgodne z procedurą FTR; rozwiązanie przy pierwszym kontakcie.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,3,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Edukacja / usamodzielnienie klienta<span class="hint-btn" onclick="toggleHint(&#39;h-m-mery-4&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-mery-4">Przekazanie wiedzy umożliwiającej klientowi samodzielne działanie; zachowanie standardów instrukcji.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;mery&#39;,4,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Mail 1</div>
-        <textarea class="ntextarea" id="sn-m-mery-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-mery-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-0&#39;,&#39;Brak weryfikacji klienta&#39;)">Brak weryfikacji klienta</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-0&#39;,&#39;Błędna informacja merytoryczna&#39;)">Błędna informacja merytoryczna</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-0&#39;,&#39;Nie rozpoznał potrzeby&#39;)">Nie rozpoznał potrzeby</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-0&#39;,&#39;Brak empatii&#39;)">Brak empatii</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-mery-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 2</div>
-        <textarea class="ntextarea" id="sn-m-mery-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-mery-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-1&#39;,&#39;Brak weryfikacji klienta&#39;)">Brak weryfikacji klienta</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-1&#39;,&#39;Błędna informacja merytoryczna&#39;)">Błędna informacja merytoryczna</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-1&#39;,&#39;Nie rozpoznał potrzeby&#39;)">Nie rozpoznał potrzeby</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-1&#39;,&#39;Brak empatii&#39;)">Brak empatii</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-mery-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 3</div>
-        <textarea class="ntextarea" id="sn-m-mery-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-mery-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-2&#39;,&#39;Brak weryfikacji klienta&#39;)">Brak weryfikacji klienta</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-2&#39;,&#39;Błędna informacja merytoryczna&#39;)">Błędna informacja merytoryczna</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-2&#39;,&#39;Nie rozpoznał potrzeby&#39;)">Nie rozpoznał potrzeby</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-mery-2&#39;,&#39;Brak empatii&#39;)">Brak empatii</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-mery-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-b" id="m-sec-jak">
-      <div class="sec-hdr" onclick="toggleSec(&#39;m-sec-jak&#39;)">
-        <span class="sec-lbl">II. Jakość / Komunikacja</span>
-        <span class="sec-wt">waga 45%</span>
-        <span class="sec-score" id="m-ss-jak">5.0 / 5.0 / 5.0 / 5</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Mail 1</th><th style="width:21%">Mail 2</th><th style="width:21%">Mail 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Powitanie i zakończenie – zgodność ze standardem<span class="hint-btn" onclick="toggleHint(&#39;h-m-jak-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-jak-0">Powitanie zgodne z zasadami (Szanowny Panie/Pani); pożegnanie spójne z formą powitania; dostosowanie do płci/stanowiska.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Profesjonalizm i struktura wiadomości<span class="hint-btn" onclick="toggleHint(&#39;h-m-jak-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-jak-1">Jednolita czcionka, kolorystyka, formatowanie; poprawna stopka; modyfikacja tematu odpowiedzi; zwięzła treść.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawność językowa i unikanie negatywizmów<span class="hint-btn" onclick="toggleHint(&#39;h-m-jak-2&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-jak-2">Brak błędów ortograficznych/gramatycznych; brak zdrobnień, osłabiaczy, zwrotów: Witam, Cześć, Ty/Oni; język korzyści.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,2,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Jasność przekazu i ekspozycja kluczowych informacji<span class="hint-btn" onclick="toggleHint(&#39;h-m-jak-3&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-jak-3">Najważniejsze elementy wyróżnione; logiczna struktura; informacje łatwe do zrozumienia dla klienta.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,3,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Inicjatywa i postawa pro-kliencka<span class="hint-btn" onclick="toggleHint(&#39;h-m-jak-4&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-jak-4">Proponowanie najlepszych rozwiązań; przejęcie kontroli nad sprawą; przy odpowiedzi &gt;48h – przeprosiny za czas oczekiwania.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;jak&#39;,4,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Mail 1</div>
-        <textarea class="ntextarea" id="sn-m-jak-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-jak-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-0&#39;,&#39;Brak przywitania&#39;)">Brak przywitania</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-0&#39;,&#39;Nieodpowiedni ton&#39;)">Nieodpowiedni ton</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-0&#39;,&#39;Błędy językowe&#39;)">Błędy językowe</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-0&#39;,&#39;Nie słuchał aktywnie&#39;)">Nie słuchał aktywnie</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-jak-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 2</div>
-        <textarea class="ntextarea" id="sn-m-jak-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-jak-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-1&#39;,&#39;Brak przywitania&#39;)">Brak przywitania</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-1&#39;,&#39;Nieodpowiedni ton&#39;)">Nieodpowiedni ton</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-1&#39;,&#39;Błędy językowe&#39;)">Błędy językowe</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-1&#39;,&#39;Nie słuchał aktywnie&#39;)">Nie słuchał aktywnie</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-jak-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 3</div>
-        <textarea class="ntextarea" id="sn-m-jak-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-jak-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-2&#39;,&#39;Brak przywitania&#39;)">Brak przywitania</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-2&#39;,&#39;Nieodpowiedni ton&#39;)">Nieodpowiedni ton</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-2&#39;,&#39;Błędy językowe&#39;)">Błędy językowe</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-jak-2&#39;,&#39;Nie słuchał aktywnie&#39;)">Nie słuchał aktywnie</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-jak-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-c" id="m-sec-sys">
-      <div class="sec-hdr" onclick="toggleSec(&#39;m-sec-sys&#39;)">
-        <span class="sec-lbl">III. Działania w Systemach</span>
-        <span class="sec-wt">waga 10%</span>
-        <span class="sec-score" id="m-ss-sys">2.0 / 2.0 / 2.0 / 2</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Mail 1</th><th style="width:21%">Mail 2</th><th style="width:21%">Mail 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawne uzupełnienie systemów (Altar / FTR / OTRS / CRM)<span class="hint-btn" onclick="toggleHint(&#39;h-m-sys-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-sys-0">Prawidłowy zapis sprawy; status FTR; typ problemu; MID/OID/TID; właściwy dział/usługa; podpisanie zgłoszenia.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Efektywny czas obsługi maila<span class="hint-btn" onclick="toggleHint(&#39;h-m-sys-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-m-sys-1">Zgodność z procedurą czasu odpowiedzi; prawidłowy zapis w historii Altara.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;m&#39;,&#39;sys&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Mail 1</div>
-        <textarea class="ntextarea" id="sn-m-sys-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-sys-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-0&#39;,&#39;Błędny zapis w Altarze&#39;)">Błędny zapis w Altarze</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-0&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-sys-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 2</div>
-        <textarea class="ntextarea" id="sn-m-sys-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-sys-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-1&#39;,&#39;Błędny zapis w Altarze&#39;)">Błędny zapis w Altarze</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-1&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-sys-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Mail 3</div>
-        <textarea class="ntextarea" id="sn-m-sys-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-m-sys-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-2&#39;,&#39;Błędny zapis w Altarze&#39;)">Błędny zapis w Altarze</span><span class="comment-chip" onclick="appendComment(&#39;sn-m-sys-2&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-m-sys-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div>
-    <div class="gold-blk">
-      <div class="gold-ttl">⭐ Złote Punkty <span style="font-size:10px;font-weight:400;color:var(--text3)">— za wyjątkowe zaangażowanie</span></div>
-      <div class="gold-items">
-    <div class="gold-item">
-      <label>Mail 1</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;m&#39;,0,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,0,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,0,1,this)">+1</button>
-      </div></div>
-    <div class="gold-item">
-      <label>Mail 2</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;m&#39;,1,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,1,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,1,1,this)">+1</button>
-      </div></div>
-    <div class="gold-item">
-      <label>Mail 3</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;m&#39;,2,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,2,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;m&#39;,2,1,this)">+1</button>
-      </div></div></div>
-      <div class="gold-desc"><label>Opis sytuacji</label>
-        <textarea id="m-gold-desc" placeholder="Opisz co wyróżniało zachowanie specjalisty..."></textarea>
-      </div>
-    </div>
-    <div class="res-panel">
-      <div class="res-hdr">
-        <span>Wynik końcowy</span>
-      </div>
-      <div class="res-body">
-        <div class="res-grid">
-    <div class="res-box" id="m-rb-0">
-      <div class="res-lbl">Mail 1</div>
-      <div class="res-pct" id="m-rp-0" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="m-rpts-0">12 / 12 pkt</div>
-      <div class="res-badge bg-great" id="m-rbg-0">Bardzo dobry</div>
-    </div>
-    <div class="res-box" id="m-rb-1">
-      <div class="res-lbl">Mail 2</div>
-      <div class="res-pct" id="m-rp-1" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="m-rpts-1">12 / 12 pkt</div>
-      <div class="res-badge bg-great" id="m-rbg-1">Bardzo dobry</div>
-    </div>
-    <div class="res-box" id="m-rb-2">
-      <div class="res-lbl">Mail 3</div>
-      <div class="res-pct" id="m-rp-2" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="m-rpts-2">12 / 12 pkt</div>
-      <div class="res-badge bg-great" id="m-rbg-2">Bardzo dobry</div>
-    </div>
-          <div class="res-box final-box">
-            <div class="res-lbl">Wynik końcowy (średnia)</div>
-            <div class="res-pct" id="m-rp-f" style="color: var(--green);">100%</div>
-            <div class="res-pts" id="m-rpts-f">12 / 12 pkt (śr.)</div>
-            <div class="res-badge bg-great" id="m-rbg-f">Bardzo dobry</div>
-          </div>
-        </div>
-        <div class="gen-notes"><label>Uwagi ogólne / podsumowanie oceny</label>
-          <textarea id="m-gnotes" placeholder="Wnioski, plan działania, obszary do rozwoju..."></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="act-bar">
-      <span class="act-bar-txt">Po wypełnieniu — dodaj do ewidencji i wygeneruj kartę dla specjalisty</span>
-      <button class="btn btn-outline btn-sm" onclick="printCard(&#39;m&#39;)">🖨 Drukuj kartę</button>
-      <button class="btn btn-primary" onclick="submitCard(&#39;m&#39;)">➕ Dodaj kartę</button>
-    </div></div></div>
-    <div id="tab-systemy" class="panel"><div class="wrap" id="wrap-s">
-    <div id="s-val-banner" style="display:none"></div>
-    <div class="card">
-      <div class="meta-row">
-        <div class="mf"><label>Specjalista</label>
-          <select id="s-spec" onchange="onSpecChange(&#39;s&#39;)">
-              <option value="">— wybierz —</option>
-              <option value="Anna Kowalska">Anna Kowalska</option><option value="Bartosz Nowak">Bartosz Nowak</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Karolina Lewandowska">Karolina Lewandowska</option><option value="Marta Dąbrowska">Marta Dąbrowska</option><option value="Michał Kowalczyk">Michał Kowalczyk</option><option value="Natalia Szymańska">Natalia Szymańska</option><option value="Piotr Wiśniewski">Piotr Wiśniewski</option><option value="Tomasz Zając">Tomasz Zając</option>
-            </select>
-        </div>
-        <div class="mf"><label>Stanowisko</label>
-          <select id="s-stand">
-              <option value="">— wybierz —</option>
-              <option value="Młodszy Specjalista">Młodszy Specjalista</option><option value="Specjalista ds. Obsługi Klienta">Specjalista ds. Obsługi Klienta</option><option value="Specjalista ds. Rozliczeń">Specjalista ds. Rozliczeń</option><option value="Specjalista ds. Systemów">Specjalista ds. Systemów</option><option value="Starszy Specjalista">Starszy Specjalista</option>
-            </select>
-        </div>
-        <div class="mf"><label>Dział</label>
-          <select id="s-dzial">
-              <option value="">— wybierz —</option>
-              <option value="Dział Obsługi PeP">Dział Obsługi PeP</option><option value="Dział Rozliczeń P24">Dział Rozliczeń P24</option><option value="Dział Wsparcia Technicznego">Dział Wsparcia Technicznego</option>
-            </select>
-        </div>
-        <div class="mf"><label>Oceniający</label>
-          <select id="s-oce" onchange="saveOce(this.value)">
-              <option value="">— wybierz —</option>
-              <option value="Agnieszka Maj (TL)" selected="">Agnieszka Maj (TL)</option><option value="Jakub Stachura">Jakub Stachura</option><option value="Jan Kowalczyk (TL)">Jan Kowalczyk (TL)</option><option value="Robert Wróbel (TL)">Robert Wróbel (TL)</option>
-            </select>
-        </div>
-        <div class="mf"><label>Data oceny</label><input type="date" id="s-data" value="2026-05-01" oninput="updatePeriod(&#39;s&#39;)"></div>
-      </div>
-      <div class="contact-bar">
-        <span class="contact-bar-label">Liczba kontaktów:</span>
-        <button class="cb-btn" onclick="changeCount(&#39;s&#39;,-1)" id="s-btn-minus">−</button>
-        <span class="contact-count" id="s-count">3</span>
-        <button class="cb-btn" onclick="changeCount(&#39;s&#39;,1)" id="s-btn-plus">+</button>
-        <div class="cb-divider"></div>
-        <span id="s-period-badge"><span class="period-badge">📅 P2 2026</span></span>
-      </div>
-      <div class="ids-grid" id="s-ids-grid" style="display:flex">
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Kontakt 1</div>
-      <input type="text" id="s-id-0" value="" placeholder="ID / dane kontaktu...">
-    </div>
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Kontakt 2</div>
-      <input type="text" id="s-id-1" value="" placeholder="ID / dane kontaktu...">
-    </div>
-    <div class="id-cell" style="flex:1;min-width:0">
-      <div class="id-cell-lbl">Kontakt 3</div>
-      <input type="text" id="s-id-2" value="" placeholder="ID / dane kontaktu...">
-    </div></div>
-      <div class="scale-bar">
-        <div class="sc-item"><span class="sc-chip chip-1">1</span> W pełni spełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-05">½</span> Częściowo</div>
-        <div class="sc-item"><span class="sc-chip chip-0">0</span> Niespełniony</div>
-        <div class="sc-item"><span class="sc-chip chip-nd">N/D</span> Nie dotyczy</div>
-      </div>
-    </div>
-    <div class="sec sec-a" id="s-sec-obs">
-      <div class="sec-hdr" onclick="toggleSec(&#39;s-sec-obs&#39;)">
-        <span class="sec-lbl">I. Obsługa w Systemach</span>
-        <span class="sec-wt">waga 50%</span>
-        <span class="sec-score" id="s-ss-obs">2.0 / 2.0 / 2.0 / 2</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Kontakt 1</th><th style="width:21%">Kontakt 2</th><th style="width:21%">Kontakt 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawne uzupełnienie skryptu w Altarze (w tym FTR)<span class="hint-btn" onclick="toggleHint(&#39;h-s-obs-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-obs-0">Prawidłowy status FTR; poprawny typ problemu; kompletna historia kontaktu w Altarze; brak błędów zapisu zgodnie z procedurą.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawne uzupełnienie pozostałych systemów w obrębie uprawnień<span class="hint-btn" onclick="toggleHint(&#39;h-s-obs-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-obs-1">Wszystkie obsługiwane systemy uzupełnione poprawnie (OTRS, CRM, MVM i inne); brak pominiętych pól obowiązkowych.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;obs&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 1</div>
-        <textarea class="ntextarea" id="sn-s-obs-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-obs-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-0&#39;,&#39;Brak zapisu FTR&#39;)">Brak zapisu FTR</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-0&#39;,&#39;Pominięte systemy&#39;)">Pominięte systemy</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-obs-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 2</div>
-        <textarea class="ntextarea" id="sn-s-obs-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-obs-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-1&#39;,&#39;Brak zapisu FTR&#39;)">Brak zapisu FTR</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-1&#39;,&#39;Pominięte systemy&#39;)">Pominięte systemy</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-obs-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 3</div>
-        <textarea class="ntextarea" id="sn-s-obs-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-obs-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-2&#39;,&#39;Brak zapisu FTR&#39;)">Brak zapisu FTR</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-obs-2&#39;,&#39;Pominięte systemy&#39;)">Pominięte systemy</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-obs-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-b" id="s-sec-dok">
-      <div class="sec-hdr" onclick="toggleSec(&#39;s-sec-dok&#39;)">
-        <span class="sec-lbl">II. Dokumentacja Zgłoszenia</span>
-        <span class="sec-wt">waga 30%</span>
-        <span class="sec-score" id="s-ss-dok">2.0 / 2.0 / 2.0 / 2</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Kontakt 1</th><th style="width:21%">Kontakt 2</th><th style="width:21%">Kontakt 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Poprawny zapis zgłoszenia / wiadomości<span class="hint-btn" onclick="toggleHint(&#39;h-s-dok-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-dok-0">Podpisanie zgłoszenia/wiadomości; poprawny temat i treść; właściwy dział, usługa oraz dane (MID/OID/TID) zgodnie z procedurą.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Prawidłowe przekazanie sprawy / eskalacja<span class="hint-btn" onclick="toggleHint(&#39;h-s-dok-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-dok-1">Sprawy przekazane do właściwego działu z kompletnym opisem; poprawna eskalacja; brak zbędnych przekierowań standardowych spraw.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;dok&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 1</div>
-        <textarea class="ntextarea" id="sn-s-dok-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-dok-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-0&#39;,&#39;Błędny zapis zgłoszenia&#39;)">Błędny zapis zgłoszenia</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-0&#39;,&#39;Zła eskalacja&#39;)">Zła eskalacja</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-dok-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 2</div>
-        <textarea class="ntextarea" id="sn-s-dok-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-dok-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-1&#39;,&#39;Błędny zapis zgłoszenia&#39;)">Błędny zapis zgłoszenia</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-1&#39;,&#39;Zła eskalacja&#39;)">Zła eskalacja</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-dok-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 3</div>
-        <textarea class="ntextarea" id="sn-s-dok-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-dok-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-2&#39;,&#39;Błędny zapis zgłoszenia&#39;)">Błędny zapis zgłoszenia</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-dok-2&#39;,&#39;Zła eskalacja&#39;)">Zła eskalacja</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-dok-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div><div class="sec sec-c" id="s-sec-eff">
-      <div class="sec-hdr" onclick="toggleSec(&#39;s-sec-eff&#39;)">
-        <span class="sec-lbl">III. Efektywność</span>
-        <span class="sec-wt">waga 20%</span>
-        <span class="sec-score" id="s-ss-eff">2.0 / 2.0 / 2.0 / 2</span>
-        <span class="sec-chev">▼</span>
-      </div>
-      <div class="sec-body">
-        <table class="ctable">
-          <thead class="ctable-head"><tr><th class="th-crit">Kryterium</th><th style="width:21%">Kontakt 1</th><th style="width:21%">Kontakt 2</th><th style="width:21%">Kontakt 3</th></tr></thead>
-          <tbody><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Efektywny czas obsługi (ACW / czas skryptu / czas maila)<span class="hint-btn" onclick="toggleHint(&#39;h-s-eff-0&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-eff-0">Czas działań po zakończeniu kontaktu zgodny z procedurą; brak nieuzasadnionego przedłużania czasu obsługi posprzedażowej.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,0,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr><tr class="crow">
-        <td class="td-name">
-          <div class="crit-nm">Samodzielność Specjalisty<span class="hint-btn" onclick="toggleHint(&#39;h-s-eff-1&#39;)">?</span></div>
-          <div class="hint-box" id="h-s-eff-1">Standardowe sprawy obsłużone bez zbędnych konsultacji; konsultacje tylko przy sprawach niestandardowych lub zgodnie z procedurą.</div>
-        </td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,0,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,0,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,0,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,0,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,1,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,1,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,1,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,1,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td><td class="td-score">
-          <div class="sbtn-row">
-            <button class="sbtn s1" onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,2,1,this)" title="Spełniony">1</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,2,0.5,this)" title="Częściowo">½</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,2,0,this)" title="Niespełniony">0</button>
-            <button class="sbtn " onclick="setScore(&#39;s&#39;,&#39;eff&#39;,1,2,&#39;nd&#39;,this)" title="Nie dotyczy">N/D</button>
-          </div></td></tr></tbody>
-        </table>
-        <div class="snotes-row">
-          <div class="snotes-lbl">Uwagi do sekcji</div>
-          <div class="snotes-cells"><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 1</div>
-        <textarea class="ntextarea" id="sn-s-eff-0" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-eff-0" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-0&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-0&#39;,&#39;Zbędne konsultacje&#39;)">Zbędne konsultacje</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-eff-0&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 2</div>
-        <textarea class="ntextarea" id="sn-s-eff-1" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-eff-1" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-1&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-1&#39;,&#39;Zbędne konsultacje&#39;)">Zbędne konsultacje</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-eff-1&#39;)">💬 podpowiedzi</div>
-      </div><div class="snotes-cell">
-        <div class="snotes-cl">Kontakt 3</div>
-        <textarea class="ntextarea" id="sn-s-eff-2" rows="2" placeholder="Uwagi..."></textarea>
-        <div class="comment-chips" id="chips-s-eff-2" style="display:none"><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-2&#39;,&#39;ACW przekroczony&#39;)">ACW przekroczony</span><span class="comment-chip" onclick="appendComment(&#39;sn-s-eff-2&#39;,&#39;Zbędne konsultacje&#39;)">Zbędne konsultacje</span></div>
-        <div class="comment-suggest-btn" onclick="toggleChips(&#39;chips-s-eff-2&#39;)">💬 podpowiedzi</div>
-      </div></div>
-        </div>
-      </div></div>
-    <div class="gold-blk">
-      <div class="gold-ttl">⭐ Złote Punkty <span style="font-size:10px;font-weight:400;color:var(--text3)">— za wyjątkowe zaangażowanie</span></div>
-      <div class="gold-items">
-    <div class="gold-item">
-      <label>Kontakt 1</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;s&#39;,0,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,0,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,0,1,this)">+1</button>
-      </div></div>
-    <div class="gold-item">
-      <label>Kontakt 2</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;s&#39;,1,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,1,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,1,1,this)">+1</button>
-      </div></div>
-    <div class="gold-item">
-      <label>Kontakt 3</label>
-      <div class="gold-btns">
-        <button class="gbtn on" onclick="setGold(&#39;s&#39;,2,0,this)">0</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,2,0.5,this)">+0,5</button>
-        <button class="gbtn " onclick="setGold(&#39;s&#39;,2,1,this)">+1</button>
-      </div></div></div>
-      <div class="gold-desc"><label>Opis sytuacji</label>
-        <textarea id="s-gold-desc" placeholder="Opisz co wyróżniało zachowanie specjalisty..."></textarea>
-      </div>
-    </div>
-    <div class="res-panel">
-      <div class="res-hdr">
-        <span>Wynik końcowy</span>
-      </div>
-      <div class="res-body">
-        <div class="res-grid">
-    <div class="res-box" id="s-rb-0">
-      <div class="res-lbl">Kontakt 1</div>
-      <div class="res-pct" id="s-rp-0" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="s-rpts-0">6 / 6 pkt</div>
-      <div class="res-badge bg-great" id="s-rbg-0">Bardzo dobry</div>
-    </div>
-    <div class="res-box" id="s-rb-1">
-      <div class="res-lbl">Kontakt 2</div>
-      <div class="res-pct" id="s-rp-1" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="s-rpts-1">6 / 6 pkt</div>
-      <div class="res-badge bg-great" id="s-rbg-1">Bardzo dobry</div>
-    </div>
-    <div class="res-box" id="s-rb-2">
-      <div class="res-lbl">Kontakt 3</div>
-      <div class="res-pct" id="s-rp-2" style="color: var(--green);">100%</div>
-      <div class="res-pts" id="s-rpts-2">6 / 6 pkt</div>
-      <div class="res-badge bg-great" id="s-rbg-2">Bardzo dobry</div>
-    </div>
-          <div class="res-box final-box">
-            <div class="res-lbl">Wynik końcowy (średnia)</div>
-            <div class="res-pct" id="s-rp-f" style="color: var(--green);">100%</div>
-            <div class="res-pts" id="s-rpts-f">6 / 6 pkt (śr.)</div>
-            <div class="res-badge bg-great" id="s-rbg-f">Bardzo dobry</div>
-          </div>
-        </div>
-        <div class="gen-notes"><label>Uwagi ogólne / podsumowanie oceny</label>
-          <textarea id="s-gnotes" placeholder="Wnioski, plan działania, obszary do rozwoju..."></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="act-bar">
-      <span class="act-bar-txt">Po wypełnieniu — dodaj do ewidencji i wygeneruj kartę dla specjalisty</span>
-      <button class="btn btn-outline btn-sm" onclick="printCard(&#39;s&#39;)">🖨 Drukuj kartę</button>
-      <button class="btn btn-primary" onclick="submitCard(&#39;s&#39;)">➕ Dodaj kartę</button>
-    </div></div></div>
-    <div id="tab-dashboard" class="panel"><div class="wrap" id="wrap-dash"><div class="dash-filters"><div class="df"><label>Okres:</label><select id="d-fp" onchange="renderDash()"><option value="">Wszystkie</option><option value="P1 2025">P1 2025</option><option value="P2 2025">P2 2025</option><option value="P3 2025">P3 2025</option><option value="P1">Każde P1</option><option value="P2">Każde P2</option><option value="P3">Każde P3</option></select></div><div class="df"><label>Typ:</label><select id="d-ft" onchange="renderDash()"><option value="">Wszystkie</option><option value="r">Rozmowy</option><option value="m">Maile</option><option value="s">Systemy</option></select></div><div class="df"><label>Specjalista:</label><select id="d-fs" onchange="renderDash()"><option value="">Wszyscy</option><option value="Anna Kowalska">Anna Kowalska</option><option value="Bartosz Nowak">Bartosz Nowak</option><option value="Karolina Lewandowska">Karolina Lewandowska</option><option value="Marta Dąbrowska">Marta Dąbrowska</option><option value="Michał Kowalczyk">Michał Kowalczyk</option><option value="Natalia Szymańska">Natalia Szymańska</option><option value="Piotr Wiśniewski">Piotr Wiśniewski</option><option value="Tomasz Zając">Tomasz Zając</option></select></div><div class="df"><label>Dział:</label><select id="d-fd" onchange="renderDash()"><option value="">Wszystkie</option><option value="Dział Obsługi PeP">Dział Obsługi PeP</option><option value="Dział Rozliczeń P24">Dział Rozliczeń P24</option><option value="Dział Wsparcia Technicznego">Dział Wsparcia Technicznego</option></select></div><div class="df"><label>Ocena:</label><select id="d-fr" onchange="renderDash()"><option value="">Wszystkie</option><option value="great">Bardzo dobry</option><option value="good">Dobry</option><option value="below">Poniżej std.</option></select></div><div class="df"><label>Od:</label><input type="date" id="d-df" onchange="renderDash()"></div><div class="df"><label>Do:</label><input type="date" id="d-dt" onchange="renderDash()"></div><button class="btn btn-outline btn-sm" onclick="resetDashF()" style="margin-left:auto">↺ Reset</button></div><div id="d-kpi"><div class="dash-kpi-row"><div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val">30</div><div class="kpi-label">Łącznie kart</div><div class="kpi-sub">8 spec.</div></div><div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-val" style="color:var(--green)">0</div><div class="kpi-label">Bardzo dobry</div><div class="kpi-sub">0%</div></div><div class="kpi-card"><div class="kpi-icon">⚡</div><div class="kpi-val" style="color:var(--amber)">5</div><div class="kpi-label">Dobry</div><div class="kpi-sub">17%</div></div><div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-val" style="color:var(--red)">25</div><div class="kpi-label">Poniżej std.</div><div class="kpi-sub">83%</div></div><div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val" style="color:var(--teal)">73%</div><div class="kpi-label">Średni wynik</div><div class="kpi-sub">z 30 kart</div></div></div></div><div id="d-goal"><div class="dash-widget" style="margin-bottom:12px"><div class="dw-title">🎯 Realizacja celu rozmów <span class="dw-sub">Cel: 9 / period / spec.</span></div><div class="goal-list"><div class="goal-row"><div class="goal-spec" title="Anna Kowalska">Anna Kowalska</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Piotr Wiśniewski">Piotr Wiśniewski</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Tomasz Zając">Tomasz Zając</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Natalia Szymańska">Natalia Szymańska</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Anna Kowalska">Anna Kowalska</div><div class="goal-per">P2 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Piotr Wiśniewski">Piotr Wiśniewski</div><div class="goal-per">P2 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Tomasz Zając">Tomasz Zając</div><div class="goal-per">P2 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Marta Dąbrowska">Marta Dąbrowska</div><div class="goal-per">P2 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Anna Kowalska">Anna Kowalska</div><div class="goal-per">P3 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Tomasz Zając">Tomasz Zając</div><div class="goal-per">P3 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Michał Kowalczyk">Michał Kowalczyk</div><div class="goal-per">P3 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Natalia Szymańska">Natalia Szymańska</div><div class="goal-per">P3 2025</div><div class="goal-bg"><div class="goal-fill" style="width:33%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">3/9</div><div class="goal-bdg g-miss">33%</div></div><div class="goal-row"><div class="goal-spec" title="Marta Dąbrowska">Marta Dąbrowska</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:22%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">2/9</div><div class="goal-bdg g-miss">22%</div></div><div class="goal-row"><div class="goal-spec" title="Bartosz Nowak">Bartosz Nowak</div><div class="goal-per">P1 2025</div><div class="goal-bg"><div class="goal-fill" style="width:22%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">2/9</div><div class="goal-bdg g-miss">22%</div></div><div class="goal-row"><div class="goal-spec" title="Karolina Lewandowska">Karolina Lewandowska</div><div class="goal-per">P2 2025</div><div class="goal-bg"><div class="goal-fill" style="width:22%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">2/9</div><div class="goal-bdg g-miss">22%</div></div><div class="goal-row"><div class="goal-spec" title="Piotr Wiśniewski">Piotr Wiśniewski</div><div class="goal-per">P3 2025</div><div class="goal-bg"><div class="goal-fill" style="width:22%;background:var(--red)"></div></div><div class="goal-cnt" style="color:var(--red)">2/9</div><div class="goal-bdg g-miss">22%</div></div></div></div></div><div class="dash-g2" id="d-r1"><div class="dash-widget"><div class="dw-title">⚠️ Słabe punkty <span class="dw-sub">% ocen 0 lub ½</span></div><div class="pt-list"><div class="pt-row"><div class="pt-name" title="Powitanie i zakończenie – zgodność ze standard…">Powitanie i zakończenie – zgodność ze standard…</div><div class="pt-bg"><div class="pt-fill" style="width:60%;background:var(--red)"></div></div><div class="pt-pct" style="color:var(--red)">60%</div></div><div class="pt-row"><div class="pt-name" title="Efektywny czas obsługi (ACW / czas skryptu / c…">Efektywny czas obsługi (ACW / czas skryptu / c…</div><div class="pt-bg"><div class="pt-fill" style="width:60%;background:var(--red)"></div></div><div class="pt-pct" style="color:var(--red)">60%</div></div><div class="pt-row"><div class="pt-name" title="Poprawne uzupełnienie pozostałych systemów w o…">Poprawne uzupełnienie pozostałych systemów w o…</div><div class="pt-bg"><div class="pt-fill" style="width:54%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">54%</div></div><div class="pt-row"><div class="pt-name" title="Znajomość procedur i poprawność merytoryczna">Znajomość procedur i poprawność merytoryczna</div><div class="pt-bg"><div class="pt-fill" style="width:53%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">53%</div></div><div class="pt-row"><div class="pt-name" title="Empatia i nastawienie na klienta">Empatia i nastawienie na klienta</div><div class="pt-bg"><div class="pt-fill" style="width:50%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">50%</div></div><div class="pt-row"><div class="pt-name" title="Aktywne słuchanie, dostosowanie się do rozmówc…">Aktywne słuchanie, dostosowanie się do rozmówc…</div><div class="pt-bg"><div class="pt-fill" style="width:50%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">50%</div></div><div class="pt-row"><div class="pt-name" title="Ton, tempo i atmosfera rozmowy">Ton, tempo i atmosfera rozmowy</div><div class="pt-bg"><div class="pt-fill" style="width:48%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">48%</div></div><div class="pt-row"><div class="pt-name" title="Edukacja i usamodzielnienie klienta">Edukacja i usamodzielnienie klienta</div><div class="pt-bg"><div class="pt-fill" style="width:47%;background:var(--amber)"></div></div><div class="pt-pct" style="color:var(--amber)">47%</div></div></div></div><div class="dash-widget"><div class="dw-title">💪 Mocne punkty <span class="dw-sub">% ocen pełnych (1)</span></div><div class="pt-list"><div class="pt-row"><div class="pt-name">Poprawność językowa i unikanie negatywizmów</div><div class="pt-bg"><div class="pt-fill" style="width:85%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">85%</div></div><div class="pt-row"><div class="pt-name">Poprawne uzupełnienie skryptu w Altarze (w tym…</div><div class="pt-bg"><div class="pt-fill" style="width:75%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">75%</div></div><div class="pt-row"><div class="pt-name">Efektywny czas obsługi maila</div><div class="pt-bg"><div class="pt-fill" style="width:73%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">73%</div></div><div class="pt-row"><div class="pt-name">Struktura rozmowy (przywitanie, przedstawienie…</div><div class="pt-bg"><div class="pt-fill" style="width:71%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">71%</div></div><div class="pt-row"><div class="pt-name">Poprawne uzupełnienie systemów (Altar / FTR / …</div><div class="pt-bg"><div class="pt-fill" style="width:71%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">71%</div></div><div class="pt-row"><div class="pt-name">Poprawność i zrozumiałość językowa. Zwroty grz…</div><div class="pt-bg"><div class="pt-fill" style="width:69%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">69%</div></div><div class="pt-row"><div class="pt-name">Profesjonalizm i struktura wiadomości</div><div class="pt-bg"><div class="pt-fill" style="width:68%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">68%</div></div><div class="pt-row"><div class="pt-name">Język korzyści, pozytywna narracja</div><div class="pt-bg"><div class="pt-fill" style="width:66%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">66%</div></div></div></div></div><div class="dash-g2" id="d-r2"><div class="dash-widget"><div class="dw-title">🏆 Ranking specjalistów</div><div style="overflow-y:auto;max-height:280px"><table class="rk-tbl"><thead><tr><th>#</th><th>Specjalista</th><th class="r">Wynik</th><th class="r">Oceny</th></tr></thead><tbody><tr><td style="padding:7px 8px;font-size:15px">🥇</td><td style="padding:7px 8px"><strong>Karolina Lewandowska</strong><div style="font-size:9px;color:var(--text3)">3 kart</div></td><td class="r" style="padding:7px 8px;color:var(--amber);font-size:14px;font-weight:700">86%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡2</span> <span style="color:var(--red);font-size:10px">⚠️1</span></td></tr><tr><td style="padding:7px 8px;font-size:15px">🥈</td><td style="padding:7px 8px"><strong>Piotr Wiśniewski</strong><div style="font-size:9px;color:var(--text3)">4 kart</div></td><td class="r" style="padding:7px 8px;color:var(--amber);font-size:14px;font-weight:700">82%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡2</span> <span style="color:var(--red);font-size:10px">⚠️2</span></td></tr><tr><td style="padding:7px 8px;font-size:15px">🥉</td><td style="padding:7px 8px"><strong>Bartosz Nowak</strong><div style="font-size:9px;color:var(--text3)">3 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">78%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡0</span> <span style="color:var(--red);font-size:10px">⚠️3</span></td></tr><tr><td style="padding:7px 8px;font-size:11px">4.</td><td style="padding:7px 8px"><strong>Anna Kowalska</strong><div style="font-size:9px;color:var(--text3)">6 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">76%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡1</span> <span style="color:var(--red);font-size:10px">⚠️5</span></td></tr><tr><td style="padding:7px 8px;font-size:11px">5.</td><td style="padding:7px 8px"><strong>Natalia Szymańska</strong><div style="font-size:9px;color:var(--text3)">3 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">72%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡0</span> <span style="color:var(--red);font-size:10px">⚠️3</span></td></tr><tr><td style="padding:7px 8px;font-size:11px">6.</td><td style="padding:7px 8px"><strong>Marta Dąbrowska</strong><div style="font-size:9px;color:var(--text3)">4 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">70%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡0</span> <span style="color:var(--red);font-size:10px">⚠️4</span></td></tr><tr><td style="padding:7px 8px;font-size:11px">7.</td><td style="padding:7px 8px"><strong>Tomasz Zając</strong><div style="font-size:9px;color:var(--text3)">4 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">67%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡0</span> <span style="color:var(--red);font-size:10px">⚠️4</span></td></tr><tr><td style="padding:7px 8px;font-size:11px">8.</td><td style="padding:7px 8px"><strong>Michał Kowalczyk</strong><div style="font-size:9px;color:var(--text3)">3 kart</div></td><td class="r" style="padding:7px 8px;color:var(--red);font-size:14px;font-weight:700">54%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅0</span> <span style="color:var(--amber);font-size:10px">⚡0</span> <span style="color:var(--red);font-size:10px">⚠️3</span></td></tr></tbody></table></div></div><div class="dash-widget"><div class="dw-title">📊 Rozkład wyników</div><div class="ch240"><canvas id="ch-dist" width="811" height="360" style="display: block; box-sizing: border-box; height: 240px; width: 540px;"></canvas></div></div></div><div class="dash-g1" id="d-r3"><div class="dash-widget"><div class="dw-title">📈 Trend w czasie</div><div class="ch260"><canvas id="ch-trend" width="1690" height="390" style="display: block; box-sizing: border-box; height: 260px; width: 1126px;"></canvas></div></div></div></div></div>
-    <div id="tab-ewidencja" class="panel"><div class="wrap" id="wrap-ew">
-    <div class="ew-top">
-      <div class="ew-stat"><div class="ew-stat-lbl">Łącznie kart</div><div class="ew-stat-val" id="ew-stat-total">30</div><div class="ew-stat-sub">w widoku</div></div>
-      <div class="ew-stat"><div class="ew-stat-lbl">Bardzo dobry</div><div class="ew-stat-val" style="color:var(--green)" id="ew-stat-great">0</div><div class="ew-stat-sub">≥ 92%</div></div>
-      <div class="ew-stat"><div class="ew-stat-lbl">Dobry / Poniżej</div><div class="ew-stat-val" style="color:var(--amber)" id="ew-stat-good">5 / 25</div><div class="ew-stat-sub">82–91% / &lt;82%</div></div>
-      <div class="ew-stat"><div class="ew-stat-lbl">Śr. wynik</div><div class="ew-stat-val" id="ew-stat-avg">73%</div><div class="ew-stat-sub">z widoku</div></div>
-    </div>
-    <div id="ew-charts-wrap" style="">
-      <div class="charts-grid">
-        <div class="chart-wrap"><div class="chart-title">📊 Wyniki per specjalista (ostatnia karta)</div><div class="chart-inner"><canvas id="chart-spec" style="box-sizing: border-box; display: block; height: 220px; width: 540px;" width="811" height="330"></canvas></div></div>
-        <div class="chart-wrap"><div class="chart-title">📈 Trend wyników w czasie</div><div class="chart-inner"><canvas id="chart-trend" style="box-sizing: border-box; display: block; height: 220px; width: 540px;" width="811" height="330"></canvas></div></div>
-      </div>
-    </div>
-    <div class="ew-toolbar">
-      <div class="ew-fg"><label>Szukaj:</label><input type="text" id="ew-fq" placeholder="Specjalista / Dział..." oninput="renderEw()"></div>
-      <div class="ew-fg"><label>Typ:</label><select id="ew-ft" onchange="renderEw()"><option value="">Wszystkie</option><option value="r">Rozmowy</option><option value="m">Maile</option><option value="s">Systemy</option></select></div>
-      <div class="ew-fg"><label>Ocena:</label><select id="ew-fr" onchange="renderEw()"><option value="">Wszystkie</option><option value="great">Bardzo dobry</option><option value="good">Dobry</option><option value="below">Poniżej std.</option></select></div>
-      <div class="ew-fg"><label>Okres:</label><select id="ew-fp" onchange="renderEw()"><option value="">Wszystkie</option><option value="P1">P1 (I–IV)</option><option value="P2">P2 (V–VIII)</option><option value="P3">P3 (IX–XII)</option></select></div>
-      <div class="ew-fg"><label>Spec.:</label><select id="ew-fs" onchange="renderEw()"><option value="">Wszyscy</option><option value="Anna Kowalska">Anna Kowalska</option><option value="Bartosz Nowak">Bartosz Nowak</option><option value="Karolina Lewandowska">Karolina Lewandowska</option><option value="Marta Dąbrowska">Marta Dąbrowska</option><option value="Michał Kowalczyk">Michał Kowalczyk</option><option value="Natalia Szymańska">Natalia Szymańska</option><option value="Piotr Wiśniewski">Piotr Wiśniewski</option><option value="Tomasz Zając">Tomasz Zając</option></select></div>
-      <div class="ew-toolbar-r">
-        <button class="btn btn-outline btn-sm" onclick="copyTable()">📋 Kopiuj</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
-        <button class="btn btn-dark btn-sm" onclick="exportXLS()">⬇ Excel</button>
-        <button class="btn btn-dark btn-sm" onclick="exportJSON()">⬇ JSON</button>
-        <button class="btn btn-outline btn-sm" onclick="openModal(&#39;import-modal&#39;)">📥 Import</button>
-        <button id="sp-btn" class="btn btn-dark btn-sm" onclick="openInSharePoint()" style="display:none">📤 SharePoint</button>
-        <button class="btn btn-outline btn-sm" onclick="loadSeedData()">🧪 Dane testowe</button>
-        <button class="btn btn-danger btn-sm" onclick="clearReg()">🗑 Wyczyść</button>
-      </div>
-    </div>
-    <div class="ew-wrap">
-      <table class="ewt">
-        <thead><tr>
-          <th onclick="sortBy(&#39;id&#39;)"># <span class="sort-arrow">↕</span></th>
-          <th onclick="sortBy(&#39;spec&#39;)">Specjalista <span class="sort-arrow">↕</span></th>
-          <th>Typ</th>
-          <th onclick="sortBy(&#39;period&#39;)">Okres <span class="sort-arrow">↕</span></th>
-          <th onclick="sortBy(&#39;data&#39;)">Data <span class="sort-arrow">↕</span></th>
-          <th>Oceniający</th>
-          <th class="r" onclick="sortBy(&#39;s1&#39;)">Sek.1 <span class="sort-arrow">↕</span></th>
-          <th class="r" onclick="sortBy(&#39;s2&#39;)">Sek.2 <span class="sort-arrow">↕</span></th>
-          <th class="r" onclick="sortBy(&#39;s3&#39;)">Sek.3 <span class="sort-arrow">↕</span></th>
-          <th class="r" onclick="sortBy(&#39;avgFinal&#39;)">Wynik <span class="sort-arrow">↕</span></th>
-          <th>Ocena</th>
-          <th>Status</th>
-          <th></th>
-        </tr></thead>
-        <tbody id="ew-tbody"><tr>
-      <td class="mu">1</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-01-15</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">68%</td>
-      <td class="r epct ep-below">66%</td>
-      <td class="r epct ep-good">83%</td>
-      <td class="r"><strong class="epct ep-below">69%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000000000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000000000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000000000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000000000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000000000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000000000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">2</td>
-      <td><strong>Piotr Wiśniewski</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-01-22</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-good">84%</td>
-      <td class="r epct ep-below">76%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">80%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000010000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000010000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000010000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000010000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000010000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000010000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">3</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-01-28</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">74%</td>
-      <td class="r epct ep-great">96%</td>
-      <td class="r epct ep-good">83%</td>
-      <td class="r"><strong class="epct ep-good">85%</strong></td>
-      <td><span class="ebadge eb-good">Dobry</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000040000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000040000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000040000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000040000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000040000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000040000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">4</td>
-      <td><strong>Marta Dąbrowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-02-10</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">71%</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r epct ep-below">38%</td>
-      <td class="r"><strong class="epct ep-below">66%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000020000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000020000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000020000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000020000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000020000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000020000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">5</td>
-      <td><strong>Tomasz Zając</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-02-18</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">58%</td>
-      <td class="r epct ep-below">70%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">65%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000030000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000030000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000030000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000030000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000030000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000030000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">6</td>
-      <td><strong>Michał Kowalczyk</strong><br><span class="mu">Dział Wsparcia Technicznego</span></td>
-      <td><span class="ebadge eb-s">Systemy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-02-25</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r epct ep-below">58%</td>
-      <td class="r epct ep-below">58%</td>
-      <td class="r"><strong class="epct ep-below">63%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000060000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000060000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000060000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000060000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000060000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000060000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">7</td>
-      <td><strong>Karolina Lewandowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-03-05</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-great">95%</td>
-      <td class="r epct ep-below">80%</td>
-      <td class="r epct ep-great">100%</td>
-      <td class="r"><strong class="epct ep-good">89%</strong></td>
-      <td><span class="ebadge eb-good">Dobry</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000050000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000050000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000050000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000050000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000050000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000050000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">8</td>
-      <td><strong>Natalia Szymańska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-03-14</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">78%</td>
-      <td class="r epct ep-below">71%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r"><strong class="epct ep-below">76%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000070000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000070000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000070000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000070000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000070000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000070000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">9</td>
-      <td><strong>Bartosz Nowak</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-03-20</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">69%</td>
-      <td class="r epct ep-good">86%</td>
-      <td class="r epct ep-great">100%</td>
-      <td class="r"><strong class="epct ep-below">80%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000080000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000080000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000080000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000080000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000080000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000080000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">10</td>
-      <td><strong>Marta Dąbrowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P1 2025</span></td>
-      <td class="mu">2025-03-28</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">68%</td>
-      <td class="r epct ep-below">78%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r"><strong class="epct ep-below">75%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000090000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000090000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000090000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000090000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000090000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000090000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">11</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-05-08</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">62%</td>
-      <td class="r epct ep-below">74%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">69%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000100000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000100000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000100000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000100000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000100000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000100000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">12</td>
-      <td><strong>Piotr Wiśniewski</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-05-15</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">77%</td>
-      <td class="r epct ep-below">77%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r"><strong class="epct ep-below">79%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000110000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000110000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000110000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000110000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000110000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000110000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">13</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-05-22</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-good">87%</td>
-      <td class="r epct ep-below">69%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r"><strong class="epct ep-below">79%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000140000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000140000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000140000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000140000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000140000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000140000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">14</td>
-      <td><strong>Tomasz Zając</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-06-04</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">70%</td>
-      <td class="r epct ep-below">71%</td>
-      <td class="r epct ep-good">83%</td>
-      <td class="r"><strong class="epct ep-below">72%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000120000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000120000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000120000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000120000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000120000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000120000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">15</td>
-      <td><strong>Karolina Lewandowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-06-11</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-good">85%</td>
-      <td class="r epct ep-good">90%</td>
-      <td class="r epct ep-great">100%</td>
-      <td class="r"><strong class="epct ep-good">89%</strong></td>
-      <td><span class="ebadge eb-good">Dobry</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000130000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000130000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000130000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000130000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000130000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000130000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">16</td>
-      <td><strong>Michał Kowalczyk</strong><br><span class="mu">Dział Wsparcia Technicznego</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-06-19</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">50%</td>
-      <td class="r epct ep-below">39%</td>
-      <td class="r epct ep-below">63%</td>
-      <td class="r"><strong class="epct ep-below">47%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000150000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000150000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000150000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000150000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000150000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000150000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">17</td>
-      <td><strong>Piotr Wiśniewski</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-s">Systemy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-07-03</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-good">83%</td>
-      <td class="r epct ep-great">100%</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r"><strong class="epct ep-good">85%</strong></td>
-      <td><span class="ebadge eb-good">Dobry</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000160000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000160000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000160000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000160000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000160000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000160000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">18</td>
-      <td><strong>Natalia Szymańska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-s">Systemy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-07-10</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r epct ep-below">50%</td>
-      <td class="r"><strong class="epct ep-below">70%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000170000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000170000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000170000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000170000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000170000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000170000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">19</td>
-      <td><strong>Marta Dąbrowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-07-17</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">56%</td>
-      <td class="r epct ep-below">74%</td>
-      <td class="r epct ep-below">58%</td>
-      <td class="r"><strong class="epct ep-below">65%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000180000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000180000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000180000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000180000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000180000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000180000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">20</td>
-      <td><strong>Bartosz Nowak</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P2 2025</span></td>
-      <td class="mu">2025-08-05</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">77%</td>
-      <td class="r epct ep-below">78%</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r"><strong class="epct ep-below">76%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000190000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000190000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000190000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000190000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000190000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000190000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">21</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-09-10</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">74%</td>
-      <td class="r epct ep-good">85%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r"><strong class="epct ep-below">81%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000200000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000200000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000200000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000200000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000200000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000200000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">22</td>
-      <td><strong>Tomasz Zając</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-09-18</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">81%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r epct ep-below">58%</td>
-      <td class="r"><strong class="epct ep-below">76%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000210000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000210000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000210000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000210000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000210000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000210000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">23</td>
-      <td><strong>Marta Dąbrowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-09-25</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">69%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r epct ep-good">83%</td>
-      <td class="r"><strong class="epct ep-below">73%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000240000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000240000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000240000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000240000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000240000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000240000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">24</td>
-      <td><strong>Piotr Wiśniewski</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-10-07</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">71%</td>
-      <td class="r epct ep-great">93%</td>
-      <td class="r epct ep-good">88%</td>
-      <td class="r"><strong class="epct ep-good">83%</strong></td>
-      <td><span class="ebadge eb-good">Dobry</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000220000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000220000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000220000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000220000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000220000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000220000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">25</td>
-      <td><strong>Michał Kowalczyk</strong><br><span class="mu">Dział Wsparcia Technicznego</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-10-15</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">43%</td>
-      <td class="r epct ep-below">57%</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r"><strong class="epct ep-below">52%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000230000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000230000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000230000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000230000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000230000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000230000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">26</td>
-      <td><strong>Karolina Lewandowska</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-10-22</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">70%</td>
-      <td class="r epct ep-good">85%</td>
-      <td class="r epct ep-great">100%</td>
-      <td class="r"><strong class="epct ep-below">80%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000250000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000250000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000250000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000250000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000250000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000250000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">27</td>
-      <td><strong>Anna Kowalska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-s">Systemy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-11-06</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r epct ep-great">92%</td>
-      <td class="r epct ep-below">67%</td>
-      <td class="r"><strong class="epct ep-below">74%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000260000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000260000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000260000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000260000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000260000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000260000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">28</td>
-      <td><strong>Tomasz Zając</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-s">Systemy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-11-13</td>
-      <td class="mu">Jan Kowalczyk (TL)</td>
-      <td class="r epct ep-below">50%</td>
-      <td class="r epct ep-below">50%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">55%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000270000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000270000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000270000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000270000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000270000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000270000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">29</td>
-      <td><strong>Natalia Szymańska</strong><br><span class="mu">Dział Obsługi PeP</span></td>
-      <td><span class="ebadge eb-r">Rozmowy</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-11-20</td>
-      <td class="mu">Agnieszka Maj (TL)</td>
-      <td class="r epct ep-below">59%</td>
-      <td class="r epct ep-below">81%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">71%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000280000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000280000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000280000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000280000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000280000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000280000)" title="Usuń">🗑</button>
-      </td>
-    </tr><tr>
-      <td class="mu">30</td>
-      <td><strong>Bartosz Nowak</strong><br><span class="mu">Dział Rozliczeń P24</span></td>
-      <td><span class="ebadge eb-m">Maile</span></td>
-      <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">P3 2025</span></td>
-      <td class="mu">2025-12-04</td>
-      <td class="mu">Robert Wróbel (TL)</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r epct ep-below">80%</td>
-      <td class="r epct ep-below">75%</td>
-      <td class="r"><strong class="epct ep-below">78%</strong></td>
-      <td><span class="ebadge eb-below">Poniżej standardu</span></td>
-      <td><span class="lock-badge " onclick="toggleLock(1700000290000)" title="Zablokuj kartę">🔓</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(1700000290000)" title="Kopiuj">📋</button>
-        <button class="ecopy" onclick="previewEntry(1700000290000)" title="Podgląd">👁</button>
-        <button class="ecopy" onclick="editEntry(1700000290000)" title="Edytuj notatki">✏️</button>
-        <button class="ecopy" onclick="editScores(1700000290000)" title="Edytuj oceny">🎯</button>
-        <button class="ecopy" onclick="deleteEntry(1700000290000)" title="Usuń">🗑</button>
-      </td>
-    </tr></tbody>
-      </table>
-    </div></div></div>
+    <div id="tab-rozmowy" class="panel on"><div class="wrap" id="wrap-r"></div></div>
+    <div id="tab-maile" class="panel"><div class="wrap" id="wrap-m"></div></div>
+    <div id="tab-systemy" class="panel"><div class="wrap" id="wrap-s"></div></div>
+    <div id="tab-dashboard" class="panel"><div class="wrap" id="wrap-dash"></div></div>
+    <div id="tab-ewidencja" class="panel"><div class="wrap" id="wrap-ew"></div></div>
     <div id="tab-raporty" class="panel"><div class="wrap" id="wrap-raporty"></div></div>
     <div id="tab-admin" class="panel"><div class="wrap" id="wrap-admin"></div></div>
   </main>
@@ -3817,7 +1915,7 @@ function saveScoreEdit(){
 }
 
 // ── DASHBOARD ──
-var GOAL=9, dashCh={};
+var GOAL=9, dashCh={}, cmpSelected=[], cmpType='r';
 (function(){var s=localStorage.getItem('pep_goal');if(s&&!isNaN(s))GOAL=parseInt(s);})();
 
 function dashRows(){
@@ -3855,7 +1953,7 @@ function buildDashboard(){
     '<button class="btn btn-outline btn-sm" onclick="resetDashF()" style="margin-left:auto">↺ Reset</button>'+
   '</div>'+
   '<div id="d-kpi"></div><div id="d-goal"></div>'+
-  '<div class="dash-g2" id="d-r1"></div><div class="dash-g2" id="d-r2"></div><div class="dash-g1" id="d-r3"></div>';
+  '<div class="dash-g2" id="d-r1"></div><div class="dash-g2" id="d-r2"></div><div class="dash-g1" id="d-r3"></div><div class="dash-g1" id="d-r4"></div>';
   renderDash();
 }
 function resetDashF(){
@@ -3906,7 +2004,7 @@ function renderDash(){
   }).join(''):'<div style="color:var(--text3);font-size:11px;padding:8px 0">Brak kart Rozmów.</div>';
   document.getElementById('d-goal').innerHTML='<div class="dash-widget" style="margin-bottom:12px">'+
     '<div class="dw-title">🎯 Realizacja celu rozmów <span class="dw-sub">Cel: '+GOAL+' / period / spec.</span></div>'+
-    '<div class="goal-list">'+gHtml+'</div></div>';
+    '<div class="dw-body"><div class="goal-list">'+gHtml+'</div></div></div>';
   // SŁABE + MOCNE
   var wMap={}, sMap={};
   rows.forEach(function(e){
@@ -3932,8 +2030,8 @@ function renderDash(){
   var noData='<div style="color:var(--text3);font-size:11px;padding:8px 0">Brak danych szczegółowych.</div>';
   var wHtml=wList.map(function(w){var col=w.rate>=60?'var(--red)':w.rate>=30?'var(--amber)':'var(--green)';return '<div class="pt-row"><div class="pt-name" title="'+w.name+'">'+w.name+'</div><div class="pt-bg"><div class="pt-fill" style="width:'+w.rate+'%;background:'+col+'"></div></div><div class="pt-pct" style="color:'+col+'">'+w.rate+'%</div></div>';}).join('')||noData;
   var sHtml=sList.map(function(s){return '<div class="pt-row"><div class="pt-name">'+s.name+'</div><div class="pt-bg"><div class="pt-fill" style="width:'+s.rate+'%;background:var(--green)"></div></div><div class="pt-pct" style="color:var(--green)">'+s.rate+'%</div></div>';}).join('')||noData;
-  document.getElementById('d-r1').innerHTML='<div class="dash-widget"><div class="dw-title">⚠️ Słabe punkty <span class="dw-sub">% ocen 0 lub ½</span></div><div class="pt-list">'+wHtml+'</div></div>'+
-    '<div class="dash-widget"><div class="dw-title">💪 Mocne punkty <span class="dw-sub">% ocen pełnych (1)</span></div><div class="pt-list">'+sHtml+'</div></div>';
+  document.getElementById('d-r1').innerHTML='<div class="dash-widget"><div class="dw-title">⚠️ Słabe punkty <span class="dw-sub">% ocen 0 lub ½</span></div><div class="dw-body"><div class="pt-list">'+wHtml+'</div></div></div>'+
+    '<div class="dash-widget"><div class="dw-title">💪 Mocne punkty <span class="dw-sub">% ocen pełnych (1)</span></div><div class="dw-body"><div class="pt-list">'+sHtml+'</div></div></div>';
   // RANKING
   var bSpec={};
   rows.forEach(function(e){if(!bSpec[e.spec])bSpec[e.spec]={sum:0,n:0,gr:0,gd:0,bl:0};bSpec[e.spec].sum+=e.avgFinal;bSpec[e.spec].n++;if(e.rating==='great')bSpec[e.spec].gr++;else if(e.rating==='good')bSpec[e.spec].gd++;else bSpec[e.spec].bl++;});
@@ -3941,9 +2039,10 @@ function renderDash(){
   var medals=['🥇','🥈','🥉'];
   var rHtml=ranked.map(function(r,i){var col=r.avg>=92?'var(--green)':r.avg>=82?'var(--amber)':'var(--red)';return '<tr><td style="padding:7px 8px;font-size:'+(i<3?'15':'11')+'px">'+(medals[i]||(i+1)+'.')+'</td><td style="padding:7px 8px"><strong>'+r.name+'</strong><div style="font-size:9px;color:var(--text3)">'+r.n+' kart</div></td><td class="r" style="padding:7px 8px;color:'+col+';font-size:14px;font-weight:700">'+r.avg+'%</td><td class="r" style="padding:7px 8px;white-space:nowrap"><span style="color:var(--green);font-size:10px">✅'+r.gr+'</span> <span style="color:var(--amber);font-size:10px">⚡'+r.gd+'</span> <span style="color:var(--red);font-size:10px">⚠️'+r.bl+'</span></td></tr>';}).join('');
   document.getElementById('d-r2').innerHTML=
-    '<div class="dash-widget"><div class="dw-title">🏆 Ranking specjalistów</div><div style="overflow-y:auto;max-height:280px"><table class="rk-tbl"><thead><tr><th>#</th><th>Specjalista</th><th class="r">Wynik</th><th class="r">Oceny</th></tr></thead><tbody>'+rHtml+'</tbody></table></div></div>'+
+    '<div class="dash-widget"><div class="dw-title">🏆 Ranking specjalistów</div><div class="dw-body"><table class="rk-tbl"><thead><tr><th>#</th><th>Specjalista</th><th class="r">Wynik</th><th class="r">Oceny</th></tr></thead><tbody>'+rHtml+'</tbody></table></div></div>'+
     '<div class="dash-widget"><div class="dw-title">📊 Rozkład wyników</div><div class="ch240"><canvas id="ch-dist"></canvas></div></div>';
   document.getElementById('d-r3').innerHTML='<div class="dash-widget"><div class="dw-title">📈 Trend w czasie</div><div class="ch260"><canvas id="ch-trend"></canvas></div></div>';
+  document.getElementById('d-r4').innerHTML='<div class="dash-widget"><div class="dw-title">🔍 Porównanie specjalistów <span class="dw-sub">Wybierz 2–4 osoby (maks.)</span></div><div id="d-cmp-inner"></div></div>';
   // CHARTS
   setTimeout(function(){
     var de=document.getElementById('ch-dist');
@@ -3977,8 +2076,106 @@ function renderDash(){
       }
       dashCh.trend=new Chart(te,{type:'line',data:{datasets:datasets},options:Object.assign({},bOpts,{scales:{x:{type:'category',ticks:{color:tc,font:{family:'Poppins',size:9},maxRotation:35,maxTicksLimit:12},grid:{color:gc}},y:{min:0,max:100,ticks:{color:tc,font:{family:'Poppins',size:9},callback:function(v){return v+'%';}},grid:{color:gc}}}})});
     }
+    renderCompare();
   },80);
 }
+
+function renderCompare(){
+  var inner=document.getElementById('d-cmp-inner');
+  if(!inner) return;
+  var rows=dashRows();
+  var allSpecs=[...new Set(rows.map(function(e){return e.spec;}))].sort();
+  cmpSelected=cmpSelected.filter(function(s){return allSpecs.indexOf(s)>=0;});
+  var hasType=function(t){return rows.some(function(e){return e.p===t;});};
+  if(!hasType(cmpType)){cmpType=hasType('r')?'r':hasType('m')?'m':'s';}
+  var COLORS=['#0D9488','#7C3AED','#D97706','#EC4899'];
+  // type buttons
+  var typeH='<div class="cmp-types"><span class="cmp-lbl">Typ kart:</span>'+
+    (hasType('r')?'<button class="cmp-tbtn'+(cmpType==='r'?' on':'')+'" onclick="setCmpType(\'r\')">📞 Rozmowy</button>':'')+
+    (hasType('m')?'<button class="cmp-tbtn'+(cmpType==='m'?' on':'')+'" onclick="setCmpType(\'m\')">✉️ Maile</button>':'')+
+    (hasType('s')?'<button class="cmp-tbtn'+(cmpType==='s'?' on':'')+'" onclick="setCmpType(\'s\')">🖥️ Systemy</button>':'')+
+    '</div>';
+  // spec picks
+  var picksH='<div class="cmp-picks">';
+  if(!allSpecs.length){
+    picksH+='<span style="color:var(--text3);font-size:10px">Brak danych w wybranych filtrach.</span>';
+  } else {
+    picksH+=allSpecs.map(function(s){
+      var si=cmpSelected.indexOf(s);
+      var isOn=si>=0;
+      var dis=!isOn&&cmpSelected.length>=4;
+      var st=isOn?' style="background:'+COLORS[si]+';border-color:'+COLORS[si]+'"':'';
+      return '<button class="cmp-pick'+(isOn?' on':'')+(dis?' disabled':'')+'"'+st+
+        ' data-spec="'+s+'" onclick="toggleCmpSpec(this)">'+(isOn?'✓ ':'')+s+'</button>';
+    }).join('');
+  }
+  var cntLbl=cmpSelected.length?cmpSelected.length+'/4 wybranych':'kliknij aby wybrać';
+  picksH+='<span style="font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap">'+cntLbl+'</span></div>';
+  // chart or hint
+  var chartH;
+  if(cmpSelected.length<2){
+    var hint=cmpSelected.length===0?'Wybierz co najmniej 2 specjalistów powyżej':'Wybierz jeszcze '+(2-cmpSelected.length)+' specjalist'+(cmpSelected.length===1?'ę':'ów');
+    chartH='<div class="cmp-empty">👆 '+hint+'</div>';
+  } else {
+    chartH='<div class="ch-std"><canvas id="ch-cmp"></canvas></div>';
+  }
+  inner.innerHTML=typeH+picksH+chartH;
+  if(cmpSelected.length>=2){
+    if(dashCh.cmp){try{dashCh.cmp.destroy();}catch(e){}}
+    var typeRows=rows.filter(function(e){return e.p===cmpType;});
+    var def=DEFS[cmpType];
+    var labels=def.sections.map(function(sec){return sec.lbl.replace(/^[IVX]+\.\s*/,'');});
+    var isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    var tc=isDark?'#94A3B8':'#64748B';
+    var gc=isDark?'rgba(255,255,255,.1)':'rgba(0,0,0,.07)';
+    var bgSurface=isDark?'#1E293B':'#fff';
+    var datasets=cmpSelected.map(function(spec,i){
+      var specRows=typeRows.filter(function(e){return e.spec===spec;});
+      var secScores=def.sections.map(function(sec){
+        if(!specRows.length) return 0;
+        var tot=0,cnt=0;
+        specRows.forEach(function(e){if(e.secAvg&&e.secAvg[sec.key]!==undefined){tot+=e.secAvg[sec.key];cnt++;}});
+        return cnt?Math.round(tot/cnt):0;
+      });
+      var col=COLORS[i];
+      return{label:spec,data:secScores,borderColor:col,backgroundColor:col+'28',
+        pointBackgroundColor:col,pointBorderColor:col,pointHoverRadius:7,borderWidth:2,pointRadius:5};
+    });
+    var ce=document.getElementById('ch-cmp');
+    if(ce){
+      dashCh.cmp=new Chart(ce,{
+        type:'radar',
+        data:{labels:labels,datasets:datasets},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{
+            legend:{labels:{color:tc,font:{family:'Poppins',size:10},boxWidth:12,padding:16}},
+            tooltip:{titleFont:{family:'Poppins'},bodyFont:{family:'Poppins'},
+              backgroundColor:bgSurface,titleColor:isDark?'#F1F5F9':'#0F172A',bodyColor:tc,
+              borderColor:isDark?'#334155':'#E2E8F0',borderWidth:1,
+              callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.raw+'%';}}}
+          },
+          scales:{r:{
+            min:0,max:100,
+            ticks:{stepSize:25,color:tc,font:{family:'Poppins',size:9},backdropColor:'transparent',
+              callback:function(v){return v+'%';}},
+            grid:{color:gc},
+            pointLabels:{color:tc,font:{family:'Poppins',size:11,weight:'600'}},
+            angleLines:{color:gc}
+          }}
+        }
+      });
+    }
+  }
+}
+function toggleCmpSpec(btn){
+  var s=btn.dataset.spec;
+  var idx=cmpSelected.indexOf(s);
+  if(idx>=0){cmpSelected.splice(idx,1);}
+  else if(cmpSelected.length<4){cmpSelected.push(s);}
+  renderCompare();
+}
+function setCmpType(t){cmpType=t;renderCompare();}
 
 // ── SEED DATA ──
 function seedTestData(){
@@ -4513,5 +2710,5 @@ function onSpecChange(p){
   if(dzialEl && last.dzial) dzialEl.value = last.dzial;
 }
 </script>
-
-</body></html>
+</body>
+</html>
