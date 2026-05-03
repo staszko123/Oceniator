@@ -43,6 +43,13 @@ updateRoleBadge();
     link3.href='css/hybrid-mode.css';
     document.head.appendChild(link3);
   }
+  if(!document.getElementById('forms-saas-css')){
+    var link4=document.createElement('link');
+    link4.id='forms-saas-css';
+    link4.rel='stylesheet';
+    link4.href='css/forms-saas.css';
+    document.head.appendChild(link4);
+  }
 })();
 
 function enterApp(tab){
