@@ -1,5 +1,5 @@
-/* Delikatnie ciemniejsze tło jasnego motywu */
-:root{
+/* Bezpieczny override tylko dla jasnego motywu */
+[data-theme="light"]{
   --bg:#E9F0F5;
   --surface2:#F2F6FA;
   --border:#D6E0EA;
@@ -9,10 +9,7 @@
 }
 
 [data-theme="light"] body,
-[data-theme="light"] html{
-  background:var(--bg);
-}
-
+[data-theme="light"] html,
 [data-theme="light"] .main,
 [data-theme="light"] .main-wrap{
   background:var(--bg);
@@ -20,4 +17,18 @@
 
 [data-theme="light"] .wrap{
   background:transparent;
+}
+
+/* Ciemny motyw zostaje zgodny z bazowym style.css */
+[data-theme="dark"]{
+  --bg:#0F172A;
+  --surface:#1E293B;
+  --surface2:#0F172A;
+  --border:#334155;
+  --border2:#475569;
+  --text:#F1F5F9;
+  --text2:#CBD5E1;
+  --text3:#94A3B8;
+  --navy-pale:#1E293B;
+  --slate-l:#1E293B;
 }
