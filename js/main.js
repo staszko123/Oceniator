@@ -50,6 +50,13 @@ updateRoleBadge();
     link4.href='css/forms-saas.css';
     document.head.appendChild(link4);
   }
+  if(!document.getElementById('dark-premium-css')){
+    var link5=document.createElement('link');
+    link5.id='dark-premium-css';
+    link5.rel='stylesheet';
+    link5.href='css/dark-premium.css';
+    document.head.appendChild(link5);
+  }
 })();
 
 function enterApp(tab){
