@@ -61,29 +61,31 @@
   .form-main{
     display:grid;
     grid-template-columns:minmax(0,1fr) 330px;
-    grid-template-rows:auto auto 1fr;
     gap:14px 18px;
     align-items:start;
+    position:relative;
+    padding-right:0;
   }
 
-  .form-main>.card:first-child{
-    grid-column:1;
-    grid-row:1;
-  }
-
+  .form-main>.card:first-child,
   .form-main>.sec,
   .form-main>.gold-blk{
     grid-column:1;
   }
 
-  .form-main>.act-bar{
+  .form-main>.act-bar,
+  .form-main>.res-panel{
     grid-column:2;
-    grid-row:1;
-    position:sticky;
-    top:72px;
-    z-index:32;
-    width:100%;
-    margin-bottom:10px;
+    width:330px;
+    justify-self:end;
+  }
+
+  .form-main>.act-bar{
+    position:fixed;
+    top:86px;
+    right:28px;
+    z-index:80;
+    margin:0;
     flex-direction:column;
     align-items:stretch;
     padding:12px;
@@ -103,16 +105,21 @@
   }
 
   .form-main>.res-panel{
-    grid-column:2;
-    grid-row:2 / span 30;
-    position:sticky;
-    top:230px;
-    bottom:auto;
-    z-index:31;
-    width:100%;
-    max-height:calc(100vh - 250px);
+    position:fixed;
+    top:248px;
+    right:28px;
+    bottom:18px;
+    z-index:79;
+    max-height:none;
     overflow:auto;
-    margin-bottom:0;
+    margin:0;
+  }
+
+  .form-main>.act-bar::after,
+  .form-main>.res-panel::after{
+    content:"";
+    display:block;
+    clear:both;
   }
 
   .form-main>.res-panel .res-grid{
