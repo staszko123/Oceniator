@@ -95,8 +95,8 @@ function normalizeAdminData(){
     adminData.periods=[{code:'P1',name:'P1',from:'01-01',to:'04-30'},{code:'P2',name:'P2',from:'05-01',to:'08-31'},{code:'P3',name:'P3',from:'09-01',to:'12-31'}];
   }
   adminData.goals=Object.assign({callsPerPeriod:9,mailsPerPeriod:9,systemsPerPeriod:9,minAvg:92,greatShare:60},adminData.goals||{});
-  if(!adminData.goals.mailsPerPeriod) adminData.goals.mailsPerPeriod=adminData.goals.callsPerPeriod||9;
-  if(!adminData.goals.systemsPerPeriod) adminData.goals.systemsPerPeriod=adminData.goals.callsPerPeriod||9;
+  if(adminData.goals.mailsPerPeriod==null)    adminData.goals.mailsPerPeriod=adminData.goals.callsPerPeriod||9;
+  if(adminData.goals.systemsPerPeriod==null)  adminData.goals.systemsPerPeriod=adminData.goals.callsPerPeriod||9;
   adminData.access=Object.assign({role:'admin'},adminData.access||{});
 }
 var ROLE_PERMS={

@@ -321,9 +321,15 @@ function admSaveItem(key,idx){
   buildAdmin();['r','m','s'].forEach(buildForm);showToast('Zaktualizowano'+(upd?' ('+upd+' kart)':''),'ok');
 }
 function admChGoal(d){
+  normalizeAdminData();
   GOAL=Math.max(1,Math.min(30,GOAL+d));
+  adminData.goals.callsPerPeriod=GOAL;
   localStorage.setItem('pep_goal',String(GOAL));
+  saveAdminData();
   var el=document.getElementById('adm-goal-val');if(el)el.textContent=GOAL;
+  ['r','m','s'].forEach(refreshSpecContext);
+  var dashPanel=document.getElementById('tab-dashboard');
+  if(dashPanel&&dashPanel.classList.contains('on')) buildDashboard();
   showToast('Cel: '+GOAL+' rozmów / period','ok');
 }
 function admSync(){seedAdminFromRegistry();saveAdminData();buildAdmin();showToast('Zsynchronizowano','ok');}
@@ -353,7 +359,13 @@ function admSaveGoals(){
   adminData.goals.greatShare=Math.max(0,Math.min(100,parseInt(document.getElementById('adm-goal-great')?.value||60)));
   GOAL=adminData.goals.callsPerPeriod;
   localStorage.setItem('pep_goal',String(GOAL));
-  saveAdminData();logChange('Cele','Zmieniono cele jakościowe');showToast('Cele zapisane','ok');
+  saveAdminData();
+  logChange('Cele','Zmieniono cele jakościowe');
+  // odśwież wszystkie widoki używające celów
+  ['r','m','s'].forEach(refreshSpecContext);
+  var dashPanel=document.getElementById('tab-dashboard');
+  if(dashPanel&&dashPanel.classList.contains('on')) buildDashboard();
+  showToast('Cele zapisane','ok');
 }
 function admAddPeriod(){
   if(!can('adminConfig')) return;
