@@ -20,6 +20,16 @@ draftDirty=Object.values(bootDrafts).some(formHasContent);
 updateDraftStartButton();
 updateRoleBadge();
 
+// ── UI OVERRIDES — safe visual layer loaded after base CSS ──
+(function(){
+  if(document.getElementById('theme-overrides-css')) return;
+  var link=document.createElement('link');
+  link.id='theme-overrides-css';
+  link.rel='stylesheet';
+  link.href='css/theme-overrides.css';
+  document.head.appendChild(link);
+})();
+
 function enterApp(tab){
   var start=document.getElementById('start-screen');
   if(tab){
