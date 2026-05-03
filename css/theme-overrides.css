@@ -1,0 +1,23 @@
+/* Delikatnie ciemniejsze tło jasnego motywu */
+:root{
+  --bg:#E9F0F5;
+  --surface2:#F2F6FA;
+  --border:#D6E0EA;
+  --border2:#C4D0DC;
+  --navy-pale:#E3EAF2;
+  --slate-l:#EAF0F6;
+}
+
+[data-theme="light"] body,
+[data-theme="light"] html{
+  background:var(--bg);
+}
+
+[data-theme="light"] .main,
+[data-theme="light"] .main-wrap{
+  background:var(--bg);
+}
+
+[data-theme="light"] .wrap{
+  background:transparent;
+}
