@@ -16,11 +16,11 @@ function injectHybrid(p){
   switchEl.innerHTML=`
     <div>
       <div class="hybrid-title">Tryb oceny</div>
-      <div class="hybrid-sub">Wybierz sposób pracy</div>
+      <div class="hybrid-sub">Standard lub szybkie zaznaczanie błędów</div>
     </div>
     <div class="hybrid-tabs">
       <button class="hybrid-tab on" data-mode="std">Standard</button>
-      <button class="hybrid-tab" data-mode="quick">Szybki</button>
+      <button class="hybrid-tab" data-mode="quick">Błędy</button>
     </div>
   `;
 
@@ -44,11 +44,10 @@ function injectHybrid(p){
 }
 
 function buildQuick(p,wrap){
-  const def=window.DEFS[p];
-  const count=window.state[p].count;
+  const def=DEFS[p];
+  const suggestions=SUGGESTIONS;
 
   wrap.innerHTML='';
-  wrap.style.setProperty('--contact-count',count);
 
   def.sections.forEach(sec=>{
     const secEl=document.createElement('div');
@@ -64,42 +63,54 @@ function buildQuick(p,wrap){
 
     const rows=secEl.querySelector('.hybrid-rows');
 
-    sec.criteria.forEach((crit,ci)=>{
+    (suggestions[sec.key]||[]).forEach((err,idx)=>{
       const row=document.createElement('div');
-      row.className='hybrid-row';
+      row.className='hybrid-error-row';
 
-      const critEl=document.createElement('div');
-      critEl.className='hybrid-crit';
-      critEl.textContent=crit.n;
+      const left=document.createElement('div');
+      left.innerHTML=`
+        <div class="hybrid-error-name">${err}</div>
+        <div class="hybrid-error-hint">Kliknij aby oznaczyć wpływ na ocenę</div>
+      `;
 
-      row.appendChild(critEl);
+      const actions=document.createElement('div');
+      actions.className='hybrid-error-actions';
 
-      for(let i=0;i<count;i++){
-        const cell=document.createElement('div');
-        cell.className='hybrid-contact';
+      ['ok','partial','error'].forEach(state=>{
+        const b=document.createElement('button');
+        b.className='hybrid-error-btn';
+        b.dataset.state=state;
+        b.textContent=state==='ok'?'OK':state==='partial'?'Częściowo':'Błąd';
 
-        [1,0.5,0,'nd'].forEach(val=>{
-          const b=document.createElement('button');
-          b.className='hybrid-score';
-          b.dataset.val=val;
-          b.textContent=val==='nd'?'ND':val;
+        b.onclick=()=>{
+          actions.querySelectorAll('.hybrid-error-btn').forEach(x=>x.classList.remove('on'));
+          b.classList.add('on');
 
-          b.onclick=()=>{
-            window.state[p].scores[sec.key][ci][i]=val;
-            cell.querySelectorAll('.hybrid-score').forEach(x=>x.classList.remove('on'));
-            b.classList.add('on');
-            window.recalc(p);
-          };
+          applyError(p,sec.key,idx,state);
+        };
 
-          cell.appendChild(b);
-        });
+        actions.appendChild(b);
+      });
 
-        row.appendChild(cell);
-      }
-
+      row.appendChild(left);
+      row.appendChild(actions);
       rows.appendChild(row);
     });
 
     wrap.appendChild(secEl);
   });
+}
+
+function applyError(p,secKey,idx,state){
+  const section=state==='ok'?1:state==='partial'?0.5:0;
+
+  Object.keys(stateObj(p).scores[secKey]).forEach(ci=>{
+    stateObj(p).scores[secKey][ci]=stateObj(p).scores[secKey][ci].map(()=>section);
+  });
+
+  recalc(p);
+}
+
+function stateObj(p){
+  return window.state || state;
 }
