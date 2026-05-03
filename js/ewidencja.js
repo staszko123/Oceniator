@@ -16,7 +16,7 @@ function filterRows(){
   const fa=document.getElementById('ew-fa')?.value||'active';
   const fq=document.getElementById('ew-fq')?.value?.toLowerCase()||'';
   return registry.filter(e=>
-    (fa==='all'||(fa==='archived'?e.archived:!e.archived))&&
+    (fa==='all'||(fa==='active'?!entryIsArchived(e):entryStatus(e)===fa))&&
     (!ft||e.p===ft)&&
     (!fr||e.rating===fr)&&
     (!fp||e.period?.startsWith(fp))&&
@@ -62,7 +62,7 @@ function renderEw(){
   const rows=filterRows();
   const specSel=document.getElementById('ew-fs');
   if(specSel){
-    const specs=[...new Set(registry.filter(e=>!e.archived).map(e=>e.spec))].filter(Boolean).sort();
+    const specs=[...new Set(registry.filter(e=>!entryIsArchived(e)).map(e=>e.spec))].filter(Boolean).sort();
     const cur=specSel.value;
     specSel.innerHTML='<option value="">Wszyscy</option>'+specs.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
   }
@@ -91,9 +91,12 @@ function renderEwTable(rows){
     const pc=e.avgFinal>=92?'ep-great':e.avgFinal>=82?'ep-good':'ep-below';
     const bc=e.rating==='great'?'eb-great':e.rating==='good'?'eb-good':'eb-below';
     const tc={r:'eb-r',m:'eb-m',s:'eb-s'}[e.p];
-    const status=e.archived?'Archiwum':(e.locked?'Zatw.':'Robocza');
-    const statusAction=e.archived?'restoreEntry':'toggleLock';
-    return `<tr style="${e.archived?'opacity:.62':''}">
+    const status=entryStatusLabel(e);
+    const statusCls=entryStatusClass(e);
+    const archived=entryIsArchived(e);
+    const locked=entryIsLocked(e);
+    const statusAction=archived?'restoreEntry':'advanceEntryStatus';
+    return `<tr style="${archived?'opacity:.62':''}">
       <td class="mu">${i+1}</td>
       <td><strong>${e.spec}</strong><br><span class="mu">${e.dzial||''}</span></td>
       <td><span class="ebadge ${tc}">${TL[e.p]}</span></td>
@@ -105,14 +108,17 @@ function renderEwTable(rows){
       <td class="r epct ${e.secAvg[sk[2]]>=92?'ep-great':e.secAvg[sk[2]]>=82?'ep-good':'ep-below'}">${e.secAvg[sk[2]]}%</td>
       <td class="r"><strong class="epct ${pc}">${e.avgFinal}%</strong></td>
       <td><span class="ebadge ${bc}">${ratingLabel(e.rating)}</span></td>
-      <td><span class="lock-badge ${e.archived||e.locked?'locked':''}" onclick="${statusAction}(${e.id})">${status}</span></td>
-      <td style="white-space:nowrap">
-        <button class="ecopy" onclick="copyRow(${e.id})" title="Kopiuj">K</button>
-        <button class="ecopy" onclick="previewEntry(${e.id})" title="Podgląd">P</button>
-        <button class="ecopy" onclick="editEntry(${e.id})" title="Edytuj notatki" ${(e.locked||e.archived||!can('editOwn'))?'disabled style="opacity:.4"':''}>E</button>
-        <button class="ecopy" onclick="editScores(${e.id})" title="Edytuj oceny" ${(e.locked||e.archived||!can('editOwn'))?'disabled style="opacity:.4"':''}>O</button>
-        ${e.archived?`<button class="ecopy" onclick="restoreEntry(${e.id})" title="Przywróć">↩</button>`:`<button class="ecopy" onclick="archiveEntry(${e.id})" title="Archiwizuj" ${(e.locked||!can('archive'))?'disabled style="opacity:.4"':''}>A</button>`}
-        <button class="ecopy" onclick="deleteEntry(${e.id})" title="Usuń trwale" ${(!can('hardDelete')||e.locked)?'disabled style="opacity:.4"':''}>X</button>
+      <td><span class="lock-badge status-badge ${statusCls}" onclick="${statusAction}(${e.id})">${status}</span></td>
+      <td class="row-actions-cell">
+        <button class="ecopy row-more-btn" onclick="toggleRowActions(${e.id},event)">Więcej</button>
+        <div class="row-actions-menu" id="row-actions-${e.id}">
+          <button onclick="copyRow(${e.id})">Kopiuj</button>
+          <button onclick="previewEntry(${e.id})">Podgląd</button>
+          <button onclick="editEntry(${e.id})" ${(locked||!can('editOwn'))?'disabled':''}>Edytuj notatki</button>
+          <button onclick="editScores(${e.id})" ${(locked||!can('editOwn'))?'disabled':''}>Edytuj oceny</button>
+          ${archived?`<button onclick="restoreEntry(${e.id})">Przywróć</button>`:`<button onclick="archiveEntry(${e.id})" ${(!can('archive'))?'disabled':''}>Archiwizuj</button>`}
+          <button class="danger" onclick="deleteEntry(${e.id})" ${(!can('hardDelete')||entryStatus(e)==='approved')?'disabled':''}>Usuń trwale</button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -138,7 +144,7 @@ function buildEwidencjaTab(){
       <div class="ew-fg"><label>Ocena:</label><select id="ew-fr" onchange="renderEw()"><option value="">Wszystkie</option><option value="great">Bardzo dobry</option><option value="good">Dobry</option><option value="below">Poniżej std.</option></select></div>
       <div class="ew-fg"><label>Okres:</label><select id="ew-fp" onchange="renderEw()"><option value="">Wszystkie</option><option value="P1">P1 (I–IV)</option><option value="P2">P2 (V–VIII)</option><option value="P3">P3 (IX–XII)</option></select></div>
       <div class="ew-fg"><label>Spec.:</label><select id="ew-fs" onchange="renderEw()"><option value="">Wszyscy</option></select></div>
-      <div class="ew-fg"><label>Status:</label><select id="ew-fa" onchange="renderEw()"><option value="active">Aktywne</option><option value="archived">Archiwum</option><option value="all">Wszystkie</option></select></div>
+      <div class="ew-fg"><label>Status:</label><select id="ew-fa" onchange="renderEw()"><option value="active">Aktywne</option><option value="submitted">Do weryfikacji</option><option value="review">W weryfikacji</option><option value="approved">Zatwierdzone</option><option value="archived">Archiwum</option><option value="all">Wszystkie</option></select></div>
       <div class="ew-toolbar-r">
         <button class="btn btn-outline btn-sm" onclick="copyTable()">📋 Kopiuj</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
@@ -183,7 +189,7 @@ function sortBy(col){
 // ENTRY ACTIONS
 function previewEntry(id){const e=registry.find(r=>r.id===id);if(e) openPrintView(e);}
 function editEntry(id){
-  const e=registry.find(r=>r.id===id);if(!e||e.locked||e.archived||!can('editOwn')) return;
+  const e=registry.find(r=>r.id===id);if(!e||entryIsLocked(e)||!can('editOwn')) return;
   editingId=id;
   document.getElementById('edit-notes').value=e.notes||'';
   openModal('edit-modal');
@@ -194,27 +200,46 @@ function saveEditNotes(){
   closeModal('edit-modal');renderEw();showToast('Notatka zaktualizowana','ok');
 }
 function toggleLock(id){
+  advanceEntryStatus(id);
+}
+
+function toggleRowActions(id,ev){
+  if(ev) ev.stopPropagation();
+  document.querySelectorAll('.row-actions-menu.open').forEach(function(menu){
+    if(menu.id!=='row-actions-'+id) menu.classList.remove('open');
+  });
+  var menu=document.getElementById('row-actions-'+id);
+  if(menu) menu.classList.toggle('open');
+}
+document.addEventListener('click',function(){
+  document.querySelectorAll('.row-actions-menu.open').forEach(function(menu){menu.classList.remove('open');});
+});
+function advanceEntryStatus(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||e.archived||!can('archive')) return;
-  e.locked=!e.locked;
-  saveRegistry();renderEw();logChange('Status',(e.locked?'Zatwierdzono: ':'Odblokowano: ')+(e.spec||''));
-  showToast(e.locked?'Karta zatwierdzona':'Karta odblokowana');
+  if(!e||entryIsArchived(e)||!can('archive')) return;
+  var cur=entryStatus(e);
+  var next=ENTRY_STATUS[cur].next;
+  setEntryStatus(e,next,'Zmiana z ewidencji');
+  saveRegistry();renderEw();logChange('Status',entryStatusLabel(e)+': '+(e.spec||''));
+  showToast('Status: '+entryStatusLabel(e),'ok');
 }
 function archiveEntry(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||e.locked||!can('archive')){showToast('Brak uprawnień albo karta jest zablokowana','warn');return;}
-  e.archived=true;e.archivedAt=new Date().toISOString();
+  if(!e||!can('archive')){showToast('Brak uprawnień','warn');return;}
+  e.previousStatus=entryStatus(e);
+  setEntryStatus(e,'archived','Archiwizacja');
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Zarchiwizowano kartę: '+(e.spec||''));showToast('Karta przeniesiona do archiwum','ok');
 }
 function restoreEntry(id){
   const e=registry.find(r=>r.id===id);
   if(!e||!can('archive')) return;
-  e.archived=false;delete e.archivedAt;
+  setEntryStatus(e,e.previousStatus&&e.previousStatus!=='archived'?e.previousStatus:'submitted','Przywrócenie z archiwum');
+  delete e.previousStatus;
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Przywrócono kartę: '+(e.spec||''));showToast('Karta przywrócona','ok');
 }
 function deleteEntry(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||e.locked||!can('hardDelete')){showToast('Tylko administrator może trwale usuwać niezablokowane karty','warn');return;}
+  if(!e||entryStatus(e)==='approved'||!can('hardDelete')){showToast('Tylko administrator może trwale usuwać niezatwierdzone karty','warn');return;}
   if(!confirm('Usunąć tę kartę trwale? Lepiej użyć archiwizacji, jeśli karta ma zostać w historii.')) return;
   registry=registry.filter(r=>r.id!==id);
   saveRegistry();updateBadge();renderEw();logChange('Usunięcie','Trwale usunięto kartę: '+(e.spec||''));showToast('Karta usunięta trwale');
@@ -225,34 +250,34 @@ function copyRow(id){
   const txt=[e.spec,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating)].join('\t');
   navigator.clipboard.writeText(txt).then(()=>showToast('Skopiowano wiersz'));
 }
-function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!e.archived).length;}
+function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!entryIsArchived(e)).length;}
 function clearReg(){
   if(!can('archive')){showToast('Brak uprawnień','warn');return;}
-  var active=registry.filter(e=>!e.archived).length;
+  var active=registry.filter(e=>!entryIsArchived(e)).length;
   if(!confirm(`Zarchiwizować wszystkie aktywne karty (${active})? Dane pozostaną dostępne w filtrze Archiwum.`)) return;
-  registry.forEach(e=>{if(!e.archived){e.archived=true;e.archivedAt=new Date().toISOString();}});
+  registry.forEach(e=>{if(!entryIsArchived(e)){e.previousStatus=entryStatus(e);setEntryStatus(e,'archived','Archiwizacja zbiorcza');}});
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Zarchiwizowano wszystkie aktywne karty');showToast('Aktywne karty zarchiwizowane');
 }
 // EXPORT / IMPORT
 function copyTable(){
   const rows=filterRows();if(!rows.length){showToast('Brak danych','err');return;}
-  const hdr=['Lp','Specjalista','Dział','Typ','Okres','Data','Sek.1%','Sek.2%','Sek.3%','Wynik%','Ocena'];
+  const hdr=['Lp','Specjalista','Dział','Typ','Okres','Data','Sek.1%','Sek.2%','Sek.3%','Wynik%','Ocena','Status'];
   const lines=[hdr.join('\t')];
-  rows.forEach((e,i)=>{const sk=SK[e.p];lines.push([i+1,e.spec,e.dzial,TL[e.p],e.period||'',e.data,e.secAvg[sk[0]],e.secAvg[sk[1]],e.secAvg[sk[2]],e.avgFinal,ratingLabel(e.rating)].join('\t'));});
+  rows.forEach((e,i)=>{const sk=SK[e.p];lines.push([i+1,e.spec,e.dzial,TL[e.p],e.period||'',e.data,e.secAvg[sk[0]],e.secAvg[sk[1]],e.secAvg[sk[2]],e.avgFinal,ratingLabel(e.rating),entryStatusLabel(e)].join('\t'));});
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Skopiowano '+rows.length+' wierszy'));
 }
 function exportCSV(){
   const rows=filterRows();if(!rows.length){showToast('Brak danych','err');return;}
-  const hdr=['Lp','Specjalista','Stanowisko','Dział','Typ karty','Okres','Data oceny','Oceniający','Sekcja 1 (%)','Sekcja 2 (%)','Sekcja 3 (%)','Wynik końcowy (%)','Ocena'];
-  const csv='\uFEFF'+[hdr,  ...rows.map((e,i)=>{const sk=SK[e.p];return[i+1,e.spec,e.stand,e.dzial,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]],e.secAvg[sk[1]],e.secAvg[sk[2]],e.avgFinal,ratingLabel(e.rating)];})].map(r=>r.map(v=>`"${v}"`).join(',')).join('\r\n');
+  const hdr=['Lp','Specjalista','Stanowisko','Dział','Typ karty','Okres','Data oceny','Oceniający','Sekcja 1 (%)','Sekcja 2 (%)','Sekcja 3 (%)','Wynik końcowy (%)','Ocena','Status'];
+  const csv='\uFEFF'+[hdr,  ...rows.map((e,i)=>{const sk=SK[e.p];return[i+1,e.spec,e.stand,e.dzial,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]],e.secAvg[sk[1]],e.secAvg[sk[2]],e.avgFinal,ratingLabel(e.rating),entryStatusLabel(e)];})].map(r=>r.map(v=>`"${v}"`).join(',')).join('\r\n');
   dl('Ewidencja_Ocen_PeP_P24.csv','text/csv;charset=utf-8',csv);showToast('CSV zapisany','ok');
 }
 function exportXLS(){
   const rows=filterRows();if(!rows.length){showToast('Brak danych','err');return;}
-  const hdr=['Lp','Specjalista','Stanowisko','Dział','Typ karty','Okres','Data oceny','Oceniający','Sekcja 1 (%)','Sekcja 2 (%)','Sekcja 3 (%)','Wynik końcowy (%)','Ocena'];
+  const hdr=['Lp','Specjalista','Stanowisko','Dział','Typ karty','Okres','Data oceny','Oceniający','Sekcja 1 (%)','Sekcja 2 (%)','Sekcja 3 (%)','Wynik końcowy (%)','Ocena','Status'];
   let h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table>';
   h+='<tr style="background:#1B2E4B;color:white;font-weight:bold">'+hdr.map(v=>`<th>${v}</th>`).join('')+'</tr>';
-  rows.forEach((e,i)=>{const sk=SK[e.p];const bg=e.rating==='great'?'#DCFCE7':e.rating==='good'?'#FEF3C7':'#FEE2E2';const vals=[i+1,e.spec,e.stand,e.dzial,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating)];h+=`<tr>${vals.map((v,vi)=>`<td style="${vi===11?'background:'+bg+';font-weight:bold':''}">${v}</td>`).join('')}</tr>`;});
+  rows.forEach((e,i)=>{const sk=SK[e.p];const bg=e.rating==='great'?'#DCFCE7':e.rating==='good'?'#FEF3C7':'#FEE2E2';const vals=[i+1,e.spec,e.stand,e.dzial,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating),entryStatusLabel(e)];h+=`<tr>${vals.map((v,vi)=>`<td style="${vi===11?'background:'+bg+';font-weight:bold':''}">${v}</td>`).join('')}</tr>`;});
   h+='</table></body></html>';dl('Ewidencja_Ocen_PeP_P24.xls','application/vnd.ms-excel',h);showToast('Excel zapisany','ok');
 }
 function exportJSON(){
@@ -272,8 +297,10 @@ function processImportFile(file){
     try{
       const data=JSON.parse(e.target.result);
       if(!Array.isArray(data)) throw new Error('Nieprawidłowy format');
+      data.forEach(normalizeEntry);
       const merged=registry.filter(r=>!data.find(d=>d.id===r.id));
       registry=[...merged,...data].sort((a,b)=>a.data<b.data?-1:1);
+      normalizeRegistry();
       saveRegistry();updateBadge();closeModal('import-modal');renderEw();
       showToast(`Zaimportowano ${data.length} kart`,'ok');
     }catch(err){showToast('Błąd importu: '+err.message,'err');}
@@ -305,8 +332,8 @@ function editScores(id){
   var eid=Number(id);
   var e=registry.find(function(r){return r.id===eid;});
   if(!e){showToast('Nie znaleziono karty','err');return;}
-  if(e.archived||!can('editOwn')){showToast('Brak uprawnień lub karta w archiwum','warn');return;}
-  if(e.locked){showToast('Karta zatwierdzona','warn');return;}
+  if(entryIsArchived(e)||!can('editOwn')){showToast('Brak uprawnień lub karta w archiwum','warn');return;}
+  if(entryStatus(e)==='approved'){showToast('Karta zatwierdzona','warn');return;}
   seId=eid;
   var def=DEFS[e.p],n=e.contactCount||3;
   seScores={};seNotes={};

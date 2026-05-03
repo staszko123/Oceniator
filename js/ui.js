@@ -21,7 +21,7 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 
-function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!e.archived).length;}
+function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!entryIsArchived(e)).length;}
 
 // ══════════════════════════════════════════════
 // ROLE BADGE (page-bar switcher)
@@ -69,10 +69,10 @@ function toggleSidebar(){
   sb.classList.toggle('collapsed');
   var col=sb.classList.contains('collapsed');
   if(ch) ch.textContent=col?'▶':'◀';
-  localStorage.setItem('pep_sb_collapsed',col?'1':'0');
+  DataStore.setSidebarCollapsed(col);
 }
 (function(){
-  if(localStorage.getItem('pep_sb_collapsed')==='1'){
+  if(DataStore.getSidebarCollapsed()){
     var sb=document.getElementById('sidebar');
     var ch=document.getElementById('sb-chev');
     if(sb){sb.classList.add('collapsed');if(ch)ch.textContent='▶';}

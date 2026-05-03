@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════
-   STATE — app state, registry, localStorage, theme, permissions
+   STATE — app state, registry, persistence, theme, permissions
 ══════════════════════════════════════════════ */
 
 // ══════════════════════════════════════════════
@@ -10,6 +10,7 @@ const state={
   m:{count:3,scores:{},gold:[],ids:[],notes:{},goldDesc:''},
   s:{count:3,scores:{},gold:[],ids:[],notes:{},goldDesc:''},
 };
+window.state=state;
 const MAX_CONTACTS=10,MIN_CONTACTS=1;
 let registry=[];
 let spConfig={url:'',sheet:''};
@@ -18,25 +19,70 @@ let editingId=null;
 let ewArchiveMode='active';
 
 // ══════════════════════════════════════════════
-// LOCALSTORAGE PERSISTENCE
+// PERSISTENCE
 // ══════════════════════════════════════════════
 const LS_KEY='pep_registry_v5';
 const DRAFT_KEY='pep_form_drafts_v1';
 let draftDirty=false,lastSavedEntry=null;
+var ENTRY_STATUS={
+  submitted:{label:'Do weryf.',cls:'status-submitted',next:'review'},
+  review:{label:'W weryf.',cls:'status-review',next:'approved'},
+  approved:{label:'Zatw.',cls:'status-approved',next:'submitted'},
+  archived:{label:'Archiwum',cls:'status-archived',next:'submitted'}
+};
+function normalizeEntry(e){
+  if(!e) return e;
+  if(e.archived) e.status='archived';
+  if(!e.status) e.status=e.locked?'approved':'submitted';
+  if(!ENTRY_STATUS[e.status]) e.status='submitted';
+  e.locked=e.status==='approved';
+  e.archived=e.status==='archived';
+  if(!e.statusHistory) e.statusHistory=[];
+  return e;
+}
+function normalizeRegistry(){
+  registry=(registry||[]).map(normalizeEntry);
+}
+function entryStatus(e){return normalizeEntry(e).status;}
+function entryStatusMeta(e){return ENTRY_STATUS[entryStatus(e)]||ENTRY_STATUS.submitted;}
+function entryStatusLabel(e){return entryStatusMeta(e).label;}
+function entryStatusClass(e){return entryStatusMeta(e).cls;}
+function entryIsArchived(e){return entryStatus(e)==='archived';}
+function entryIsLocked(e){return entryStatus(e)==='approved'||entryIsArchived(e);}
+function setEntryStatus(e,status,reason){
+  if(!e||!ENTRY_STATUS[status]) return false;
+  var old=entryStatus(e);
+  e.status=status;
+  e.locked=status==='approved';
+  e.archived=status==='archived';
+  if(status==='archived'){
+    e.archivedAt=e.archivedAt||new Date().toISOString();
+  }else{
+    delete e.archivedAt;
+  }
+  e.statusHistory=e.statusHistory||[];
+  if(old!==status){
+    e.statusHistory.unshift({from:old,to:status,ts:new Date().toISOString(),role:activeRole(),reason:reason||''});
+    e.statusHistory=e.statusHistory.slice(0,30);
+  }
+  return old!==status;
+}
 function saveRegistry(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify(registry));}catch(e){}
+  normalizeRegistry();
+  DataStore.saveRegistry(registry);
 }
 function loadRegistry(){
   try{
-    const raw=localStorage.getItem(LS_KEY);
-    if(raw){registry=JSON.parse(raw);registry.forEach(e=>{if(e.archived==null)e.archived=false;});updateBadge();}
+    registry=DataStore.loadRegistry();
+    normalizeRegistry();
+    updateBadge();
   }catch(e){registry=[];}
 }
 function getDrafts(){
-  try{return JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')||{};}catch(e){return{};}
+  return DataStore.loadDrafts();
 }
 function setDrafts(drafts){
-  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(drafts));}catch(e){}
+  DataStore.saveDrafts(drafts);
 }
 function formHasContent(d){
   if(!d) return false;
@@ -52,11 +98,11 @@ function toggleTheme(){
   const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   document.documentElement.setAttribute('data-theme',isDark?'light':'dark');
   var _ic=document.getElementById('theme-icon'); if(_ic) _ic.textContent=isDark?'🌙':'☀️';
-  localStorage.setItem('pep_theme',isDark?'light':'dark');
+  DataStore.setTheme(isDark?'light':'dark');
   setTimeout(()=>renderCharts(),50);
 }
 function initTheme(){
-  var saved=localStorage.getItem('pep_theme')||'light';
+  var saved=DataStore.getTheme();
   document.documentElement.setAttribute('data-theme',saved);
   var ic=document.getElementById('theme-icon'); if(ic) ic.textContent=saved==='dark'?'☀️':'🌙';
 }
@@ -162,8 +208,8 @@ function specPeriodStatsHtml(spec,period){
     return '<div class="spec-empty">Wybierz specjalistę, aby zobaczyć jego wynik, realizację celu i ostatnie oceny w aktualnym periodzie.</div>';
   }
   var person=getPersonByName(spec)||{};
-  var rows=registry.filter(function(e){return !e.archived&&e.spec===spec&&(!period||e.period===period);});
-  var allRows=registry.filter(function(e){return !e.archived&&e.spec===spec;});
+  var rows=registry.filter(function(e){return !entryIsArchived(e)&&e.spec===spec&&(!period||e.period===period);});
+  var allRows=registry.filter(function(e){return !entryIsArchived(e)&&e.spec===spec;});
   var cards=rows.length, avg=cards?Math.round(rows.reduce(function(a,b){return a+b.avgFinal;},0)/cards):0;
   var goalRows=['r','m','s'].map(function(type){
     var done=rows.filter(function(e){return e.p===type;}).reduce(function(a,b){return a+(b.contactCount||0);},0);

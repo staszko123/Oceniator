@@ -1,6 +1,18 @@
 export function initHybrid(){
   ['r','m','s'].forEach(p=>injectHybrid(p));
+
+  if(typeof window.buildForm === 'function' && !window.__hybridBuildWrapped){
+    const originalBuildForm=window.buildForm;
+    window.__hybridBuildWrapped=true;
+    window.buildForm=function(p){
+      originalBuildForm(p);
+      setTimeout(()=>injectHybrid(p),0);
+    };
+  }
 }
+
+const hybridModes={r:'std',m:'std',s:'std'};
+const hybridSelections={r:{},m:{},s:{}};
 
 function injectHybrid(p){
   const root=document.getElementById(`tab-${{r:'rozmowy',m:'maile',s:'systemy'}[p]}`);
@@ -32,15 +44,20 @@ function injectHybrid(p){
 
   buildQuick(p,quick);
 
+  function setMode(mode){
+    hybridModes[p]=mode;
+    switchEl.querySelectorAll('.hybrid-tab').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+    container.classList.toggle('hybrid-mode',mode==='quick');
+    quick.classList.toggle('on',mode==='quick');
+  }
+
   switchEl.querySelectorAll('.hybrid-tab').forEach(btn=>{
     btn.onclick=()=>{
-      switchEl.querySelectorAll('.hybrid-tab').forEach(b=>b.classList.remove('on'));
-      btn.classList.add('on');
-      const mode=btn.dataset.mode;
-      container.classList.toggle('hybrid-mode',mode==='quick');
-      quick.classList.toggle('on',mode==='quick');
+      setMode(btn.dataset.mode);
     };
   });
+
+  setMode(hybridModes[p]||'std');
 }
 
 function buildQuick(p,wrap){
@@ -64,6 +81,7 @@ function buildQuick(p,wrap){
     const rows=secEl.querySelector('.hybrid-rows');
 
     (suggestions[sec.key]||[]).forEach((err,idx)=>{
+      const selected=hybridSelections[p]?.[sec.key]?.[idx]||'ok';
       const row=document.createElement('div');
       row.className='hybrid-error-row';
 
@@ -81,6 +99,7 @@ function buildQuick(p,wrap){
         b.className='hybrid-error-btn';
         b.dataset.state=state;
         b.textContent=state==='ok'?'OK':state==='partial'?'Częściowo':'Błąd';
+        if(state===selected) b.classList.add('on');
 
         b.onclick=()=>{
           actions.querySelectorAll('.hybrid-error-btn').forEach(x=>x.classList.remove('on'));
@@ -101,16 +120,35 @@ function buildQuick(p,wrap){
   });
 }
 
-function applyError(p,secKey,idx,state){
-  const section=state==='ok'?1:state==='partial'?0.5:0;
+function applyError(p,secKey,idx,impact){
+  const value=impact==='ok'?1:impact==='partial'?0.5:0;
+  const appState=stateObj();
+  const target=appState[p]?.scores?.[secKey]?.[idx];
+  if(!target) return;
 
-  Object.keys(stateObj(p).scores[secKey]).forEach(ci=>{
-    stateObj(p).scores[secKey][ci]=stateObj(p).scores[secKey][ci].map(()=>section);
-  });
+  if(!hybridSelections[p]) hybridSelections[p]={};
+  if(!hybridSelections[p][secKey]) hybridSelections[p][secKey]={};
+  hybridSelections[p][secKey][idx]=impact;
+
+  appState[p].scores[secKey][idx]=target.map(()=>value);
+  syncStandardButtons(p,secKey,idx,value);
 
   recalc(p);
+  if(typeof saveDraft==='function') saveDraft(p);
 }
 
-function stateObj(p){
+function syncStandardButtons(p,secKey,idx,value){
+  const row=document.querySelector(`#${p}-sec-${secKey} tbody tr:nth-child(${idx+1})`);
+  if(!row) return;
+  row.querySelectorAll('.td-score').forEach(cell=>{
+    const buttons=cell.querySelectorAll('.sbtn');
+    buttons.forEach(btn=>btn.classList.remove('s1','s05','s0','snd'));
+    const cls=value===1?'s1':value===0.5?'s05':value===0?'s0':'snd';
+    const target=Array.from(buttons).find(btn=>btn.textContent.trim()===(value===1?'1':value===0.5?'½':value===0?'0':'N/D'));
+    if(target) target.classList.add(cls);
+  });
+}
+
+function stateObj(){
   return window.state || state;
 }

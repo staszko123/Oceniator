@@ -87,7 +87,7 @@ function repGetFiltered(){
   var od=document.getElementById('rep-f-od')?.value||'';
   var doo=document.getElementById('rep-f-do')?.value||'';
   return registry.filter(function(e){
-    if(e.archived) return false;
+    if(entryIsArchived(e)) return false;
     if(spec && e.spec!==spec) return false;
     if(dzial && e.dzial!==dzial) return false;
     if(typ && e.p!==typ) return false;
@@ -127,7 +127,7 @@ function repPreview(){
   var rows=0, cols=[];
   if(type==='detail'){
     rows=filtered.length;
-    cols=['ID','Data','Okres','Typ','Specjalista','Stanowisko','Dział','Oceniający','Kontaktów','Wynik %','Ocena','Sekcja 1 %','Sekcja 2 %','Sekcja 3 %','Uwagi'];
+    cols=['ID','Data','Okres','Typ','Specjalista','Stanowisko','Dział','Oceniający','Kontaktów','Wynik %','Ocena','Status','Sekcja 1 %','Sekcja 2 %','Sekcja 3 %','Uwagi'];
   } else if(type==='summary'){
     rows=[].concat(filtered.map(function(e){return e.spec;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).length;
     cols=['Specjalista','Dział','Stanowisko','Kart','Śr. wynik %','Min %','Max %','Bardzo dobrych','Dobrych','Poniżej stand.','Śr. sek.1 %','Śr. sek.2 %','Śr. sek.3 %'];
@@ -159,13 +159,13 @@ function repBuildCsv(filtered,type){
   var SK={r:['mery','jak','sys'],m:['mery','jak','sys'],s:['obs','dok','eff']};
   var lines=[];
   if(type==='detail'){
-    lines.push(repRow(['ID','Data','Okres','Typ','Specjalista','Stanowisko','Dział','Oceniający','Kontaktów','Wynik %','Ocena','Sekcja 1 %','Sekcja 2 %','Sekcja 3 %','Uwagi']));
+    lines.push(repRow(['ID','Data','Okres','Typ','Specjalista','Stanowisko','Dział','Oceniający','Kontaktów','Wynik %','Ocena','Status','Sekcja 1 %','Sekcja 2 %','Sekcja 3 %','Uwagi']));
     filtered.forEach(function(e){
       var sk=SK[e.p]||['s1','s2','s3'];
       lines.push(repRow([
         e.id,e.data,e.period,TL[e.p]||e.p,
         e.spec,e.stand,e.dzial,e.oce,
-        e.contactCount||'',e.avgFinal||0,RL[e.rating]||e.rating,
+        e.contactCount||'',e.avgFinal||0,RL[e.rating]||e.rating,entryStatusLabel(e),
         e.secAvg?Math.round(e.secAvg[sk[0]]||0):'',
         e.secAvg?Math.round(e.secAvg[sk[1]]||0):'',
         e.secAvg?Math.round(e.secAvg[sk[2]]||0):'',

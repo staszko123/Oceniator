@@ -11,7 +11,7 @@ function buildForm(p){
   const savedSpec=document.getElementById(`${p}-spec`)?.value||bootDraft?.spec||'';
   const savedStand=document.getElementById(`${p}-stand`)?.value||bootDraft?.stand||'';
   const savedDzial=document.getElementById(`${p}-dzial`)?.value||bootDraft?.dzial||'';
-  const savedOce=document.getElementById(`${p}-oce`)?.value||bootDraft?.oce||localStorage.getItem('pep_saved_oce')||'';
+  const savedOce=document.getElementById(`${p}-oce`)?.value||bootDraft?.oce||DataStore.getSavedAssessor()||'';
   const savedData=document.getElementById(`${p}-data`)?.value||bootDraft?.data||new Date().toISOString().split('T')[0];
   const savedGnotes=document.getElementById(`${p}-gnotes`)?.value||bootDraft?.gnotes||'';
   const savedGoldDesc=document.getElementById(`${p}-gold-desc`)?.value||state[p].goldDesc;
@@ -29,6 +29,8 @@ function buildForm(p){
   const periodHtml=period?`<span class="period-badge">📅 ${period}</span>`:'';
   const countLabel={r:'rozmów',m:'maili',s:'kontaktów'}[p]||`${def.cl.toLowerCase()}ów`;
   const specialistOptions=getSpecialistOptions();
+  const specListId=`${p}-spec-list`;
+  const specOptionsHtml=specialistOptions.map(s=>`<option value="${String(s).replace(/"/g,'&quot;')}"></option>`).join('');
 
   const idsHtml=Array.from({length:n},(_,i)=>`
     <div class="id-cell">
@@ -120,10 +122,8 @@ function buildForm(p){
       <div class="meta-row meta-row-compact">
         <div class="mf mf-spec"><label>Specjalista</label>
           ${specialistOptions.length ?
-            `<select id="${p}-spec" onchange="onSpecChange('${p}')">
-              <option value="">— wybierz —</option>
-              ${specialistOptions.map(s=>`<option value="${s}" ${s===savedSpec?'selected':''}>${s}</option>`).join('')}
-            </select>` :
+            `<input type="text" id="${p}-spec" list="${specListId}" value="${savedSpec.replace(/"/g,'&quot;')}" placeholder="Zacznij wpisywać specjalistę..." oninput="onSpecChange('${p}')" autocomplete="off">
+             <datalist id="${specListId}">${specOptionsHtml}</datalist>` :
             `<input type="text" id="${p}-spec" value="${savedSpec}" placeholder="Imię i nazwisko" oninput="onSpecChange('${p}')">`
           }
         </div>
@@ -169,6 +169,9 @@ function buildForm(p){
         <textarea id="${p}-gold-desc" placeholder="Opisz co wyróżniało zachowanie specjalisty...">${savedGoldDesc}</textarea>
       </div>
     </div>
+    <div class="gen-notes gen-notes-bottom"><label>Uwagi ogólne / podsumowanie oceny</label>
+      <textarea id="${p}-gnotes" placeholder="Wnioski, plan działania, obszary do rozwoju...">${savedGnotes}</textarea>
+    </div>
     <div class="res-panel">
       <div class="res-hdr">
         <span>Wynik końcowy</span>
@@ -181,9 +184,6 @@ function buildForm(p){
             <div class="res-pts" id="${p}-rpts-f">—</div>
             <div class="res-badge" id="${p}-rbg-f">—</div>
           </div>
-        </div>
-        <div class="gen-notes"><label>Uwagi ogólne / podsumowanie oceny</label>
-          <textarea id="${p}-gnotes" placeholder="Wnioski, plan działania, obszary do rozwoju...">${savedGnotes}</textarea>
         </div>
       </div>
     </div>
@@ -334,7 +334,7 @@ function buildEntry(p){
   DEFS[p].sections.forEach(sec=>{const vals=results.map(r=>r.parts[sec.key]);secAvg[sec.key]=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);});
   const data=document.getElementById(`${p}-data`)?.value||'';
   return{
-    id:Date.now(),p,locked:false,
+    id:Date.now(),p,status:'submitted',locked:false,createdAt:new Date().toISOString(),
     spec:document.getElementById(`${p}-spec`)?.value?.trim()||'',
     stand:document.getElementById(`${p}-stand`)?.value||'',
     dzial:document.getElementById(`${p}-dzial`)?.value||'',
@@ -356,9 +356,8 @@ function submitCard(p){
   clearDraft(p);
   lastSavedEntry=entry;
   logChange('Dodanie','Dodano kartę: '+(entry.spec||''));
-  openPrintView(entry);
   updateBadge();
-  showToast('✓ Karta dodana. Otwarto podgląd.','ok');
+  showToast('✓ Karta dodana','ok');
   showAfterSave(entry);
 }
 function printCard(p){const entry=buildEntry(p);if(entry) openPrintView(entry);}
@@ -523,7 +522,7 @@ body{font-family:'Poppins',sans-serif;background:#fff;color:#0F172A;font-size:11
 }
 
 
-function saveOce(val){if(val)localStorage.setItem('pep_saved_oce',val);}
+function saveOce(val){if(val)DataStore.setSavedAssessor(val);}
 
 function onSpecChange(p){
   var spec = document.getElementById(p+'-spec')?.value||'';
@@ -531,7 +530,7 @@ function onSpecChange(p){
   var last = spec ? registry.slice().reverse().find(function(e){return e.spec===spec;}) : null;
   var stand = (person&&person.position)||last?.stand||'';
   var dzial = (person&&person.department)||last?.dzial||'';
-  var oce   = (person&&person.leader)||last?.oce||localStorage.getItem('pep_saved_oce')||'';
+  var oce   = (person&&person.leader)||last?.oce||DataStore.getSavedAssessor()||'';
   // update hidden inputs
   var standEl=document.getElementById(p+'-stand');
   var dzialEl=document.getElementById(p+'-dzial');

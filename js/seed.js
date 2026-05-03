@@ -56,7 +56,7 @@ function seedTestData(){
     });
     var avg=Math.round(results.reduce(function(a,b){return a+b.finalPct;},0)/results.length);
     var sa={};ddef.sections.forEach(function(sec){var vals=results.map(function(r){return r.parts[sec.key];});sa[sec.key]=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);});
-    cards.push({id:1700000000000+idx*10000,p:def.p,locked:false,spec:sp.spec,stand:sp.stand,dzial:sp.dzial,oce:OCE[idx%OCE.length],data:def.data,period:def.period,avgFinal:avg,secAvg:sa,contactResults:results.map(function(r){return{pct:r.finalPct,pts:{sum:0,max:0}};}),rating:avg>=92?'great':avg>=82?'good':'below',notes:'',contactCount:n,ids:Array.from({length:n},function(_,i){return 'ID-'+(10000+idx*10+i)+' / '+def.data;}),gold:Array(n).fill(0),goldDesc:'',snapshotScores:ss,snapshotNotes:sn});
+    cards.push({id:1700000000000+idx*10000,p:def.p,status:idx%5===0?'review':idx%7===0?'approved':'submitted',locked:idx%7===0,spec:sp.spec,stand:sp.stand,dzial:sp.dzial,oce:OCE[idx%OCE.length],data:def.data,period:def.period,avgFinal:avg,secAvg:sa,contactResults:results.map(function(r){return{pct:r.finalPct,pts:{sum:0,max:0}};}),rating:avg>=92?'great':avg>=82?'good':'below',notes:'',contactCount:n,ids:Array.from({length:n},function(_,i){return 'ID-'+(10000+idx*10+i)+' / '+def.data;}),gold:Array(n).fill(0),goldDesc:'',snapshotScores:ss,snapshotNotes:sn});
   });
   registry.push.apply(registry,cards);
   saveRegistry();updateBadge();

@@ -24,9 +24,8 @@ function getAssessorStats(oce){
 }
 function loadAdminData(){
   try{
-    var raw=localStorage.getItem(ADMIN_KEY);
-    if(raw){
-      var p=JSON.parse(raw);
+    var p=DataStore.loadAdmin(null);
+    if(p){
       adminData=Object.assign(adminData,p);
       if(Array.isArray(p.assessors))   adminData.assessors=p.assessors;
       if(Array.isArray(p.specialists)) adminData.specialists=p.specialists;
@@ -40,7 +39,7 @@ function loadAdminData(){
   seedAdminFromRegistry();
 }
 function saveAdminData(){
-  try{localStorage.setItem(ADMIN_KEY,JSON.stringify(adminData));}catch(e){}
+  DataStore.saveAdmin(adminData);
 }
 function seedAdminFromRegistry(){
   function addNew(arr,val){if(val&&arr.indexOf(val)===-1)arr.push(val);}
@@ -63,10 +62,10 @@ function buildAdmin(){
   normalizeAdminData();
   var wrap=document.getElementById('wrap-admin');
   if(!wrap) return;
-  var total=registry.filter(e=>!e.archived).length;
-  var archived=registry.filter(e=>e.archived).length;
-  var specs=[].concat(registry.filter(e=>!e.archived)).reduce(function(s,e){s.add(e.spec);return s;},new Set()).size;
-  var periods=[].concat(registry.filter(e=>!e.archived)).reduce(function(s,e){if(e.period)s.add(e.period);return s;},new Set()).size;
+  var total=registry.filter(e=>!entryIsArchived(e)).length;
+  var archived=registry.filter(e=>entryIsArchived(e)).length;
+  var specs=[].concat(registry.filter(e=>!entryIsArchived(e))).reduce(function(s,e){s.add(e.spec);return s;},new Set()).size;
+  var periods=[].concat(registry.filter(e=>!entryIsArchived(e))).reduce(function(s,e){if(e.period)s.add(e.period);return s;},new Set()).size;
   var roleOpts={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
   var leaders=getActiveAdminItems('assessors'), deps=getActiveAdminItems('departments'), pos=getActiveAdminItems('positions');
   var h='';
@@ -324,7 +323,7 @@ function admChGoal(d){
   normalizeAdminData();
   GOAL=Math.max(1,Math.min(30,GOAL+d));
   adminData.goals.callsPerPeriod=GOAL;
-  localStorage.setItem('pep_goal',String(GOAL));
+  DataStore.setGoal(GOAL);
   saveAdminData();
   var el=document.getElementById('adm-goal-val');if(el)el.textContent=GOAL;
   ['r','m','s'].forEach(refreshSpecContext);
@@ -358,7 +357,7 @@ function admSaveGoals(){
   adminData.goals.minAvg=Math.max(1,Math.min(100,parseInt(document.getElementById('adm-goal-avg')?.value||92)));
   adminData.goals.greatShare=Math.max(0,Math.min(100,parseInt(document.getElementById('adm-goal-great')?.value||60)));
   GOAL=adminData.goals.callsPerPeriod;
-  localStorage.setItem('pep_goal',String(GOAL));
+  DataStore.setGoal(GOAL);
   saveAdminData();
   logChange('Cele','Zmieniono cele jakościowe');
   // odśwież wszystkie widoki używające celów

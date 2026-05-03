@@ -4,7 +4,7 @@ export function authInit(){
   const roles={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
 
   function users(){
-    let u=JSON.parse(localStorage.getItem(usersKey)||'null');
+    let u=JSON.parse(DataStore.getValue(usersKey,'null')||'null');
     if(!u){
       u=[
         {id:1,l:'admin',p:'admin123',r:'admin',n:'Administrator systemu'},
@@ -12,12 +12,12 @@ export function authInit(){
         {id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:'Oceniający'},
         {id:4,l:'podglad',p:'podglad123',r:'viewer',n:'Użytkownik podglądu'}
       ];
-      localStorage.setItem(usersKey,JSON.stringify(u));
+      DataStore.setValue(usersKey,JSON.stringify(u));
     }
     return u;
   }
 
-  function session(){return JSON.parse(localStorage.getItem(sessionKey)||'null');}
+  function session(){return JSON.parse(DataStore.getValue(sessionKey,'null')||'null');}
 
   function injectStyle(){
     if(document.getElementById('oc-login-style')) return;
@@ -39,7 +39,7 @@ export function authInit(){
       .oc-field{margin-bottom:13px}.oc-field label{display:block;margin-bottom:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#64748B}.oc-field input{box-sizing:border-box;width:100%;border:1px solid #CBD5E1;background:#fff;color:#0F172A;border-radius:14px;padding:13px 14px;font:500 14px Poppins,Arial,sans-serif;outline:none}.oc-field input:focus{border-color:#0D9488;box-shadow:0 0 0 4px rgba(13,148,136,.12)}
       .oc-login-btn{width:100%;margin-top:6px;border:0;border-radius:15px;padding:13px 14px;background:#0D9488;color:#fff;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 12px 24px rgba(13,148,136,.25)}.oc-login-btn:hover{background:#0F766E}
       .oc-error{display:none;margin-top:12px;padding:10px 12px;border-radius:12px;background:#FEE2E2;color:#991B1B;font-size:12px;font-weight:700}.oc-demo{margin-top:18px;padding:14px;border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;font-size:11px;color:#64748B;line-height:1.7}.oc-demo strong{color:#0F172A}
-      .oc-userbar{display:flex;align-items:center;gap:8px;margin-left:auto}.oc-user-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border,#E2E8F0);background:var(--card,#fff);color:var(--text2,#475569);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:700}.oc-logout{border:1px solid var(--border,#E2E8F0);background:transparent;color:var(--text2,#475569);border-radius:999px;padding:7px 10px;font-size:11px;cursor:pointer}
+      .oc-userbar{display:flex;align-items:center;gap:8px;margin-left:auto}.oc-user-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #CBD5E1;background:#FFFFFF;color:#0F172A;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;box-shadow:0 8px 20px rgba(2,6,23,.18)}.oc-logout{border:1px solid rgba(255,255,255,.22);background:#0B1220;color:#F8FAFC;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}
       @media(max-width:860px){.oc-login-wrap{grid-template-columns:1fr}.oc-welcome{min-height:auto}.oc-title{font-size:30px}.oc-login-actions{grid-template-columns:1fr}.oc-login-card{padding:24px}}
     `;
     document.head.appendChild(st);
@@ -93,12 +93,12 @@ export function authInit(){
       if(er) er.style.display='block';
       return;
     }
-    localStorage.setItem(sessionKey,JSON.stringify({id:u.id}));
+    DataStore.setValue(sessionKey,JSON.stringify({id:u.id}));
     location.reload();
   };
 
   window.authLogout=function(){
-    localStorage.removeItem(sessionKey);
+    DataStore.setValue(sessionKey,null);
     location.reload();
   };
 
@@ -124,4 +124,6 @@ export function authInit(){
 
   const sel=document.getElementById('role-sw-sel');
   if(sel){sel.value=u.r;sel.disabled=true;}
+  const sw=document.getElementById('role-switcher');
+  if(sw) sw.style.display='none';
 }

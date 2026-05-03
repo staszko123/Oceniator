@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════
    AUTH — lokalny system logowania i role użytkowników
-   Etap lokalny. Dane są zapisane w localStorage.
+   Etap lokalny. Dane przechodzą przez DataStore.
    Po podpięciu Supabase moduł można przepiąć na backend.
 ══════════════════════════════════════════════ */
 
@@ -24,7 +24,7 @@ function authDefaultUsers(){
 
 function authLoadUsers(){
   try{
-    var raw = localStorage.getItem(AUTH_USERS_KEY);
+    var raw = DataStore.getValue(AUTH_USERS_KEY, null);
     if(raw) return JSON.parse(raw) || [];
   }catch(e){}
   var users = authDefaultUsers();
@@ -33,11 +33,11 @@ function authLoadUsers(){
 }
 
 function authSaveUsers(users){
-  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users || []));
+  DataStore.setValue(AUTH_USERS_KEY, JSON.stringify(users || []));
 }
 
 function authSession(){
-  try{return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||'null');}catch(e){return null;}
+  try{return JSON.parse(DataStore.getValue(AUTH_SESSION_KEY,'null')||'null');}catch(e){return null;}
 }
 
 function authCurrentUser(){
@@ -103,14 +103,14 @@ function authLogin(ev){
     if(er) er.style.display = 'block';
     return;
   }
-  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({userId:user.id,login:user.login,ts:new Date().toISOString()}));
+  DataStore.setValue(AUTH_SESSION_KEY, JSON.stringify({userId:user.id,login:user.login,ts:new Date().toISOString()}));
   var screen = document.getElementById('auth-screen');
   if(screen) screen.remove();
   authApplyUser(user);
 }
 
 function authLogout(){
-  localStorage.removeItem(AUTH_SESSION_KEY);
+  DataStore.setValue(AUTH_SESSION_KEY, null);
   location.reload();
 }
 
@@ -147,6 +147,7 @@ function authLockRoleSwitcher(user){
     sel.title = 'Rola wynika z zalogowanego użytkownika';
   }
   if(sw) sw.dataset.role = user.role;
+  if(sw) sw.style.display = 'none';
 }
 
 function authInit(){

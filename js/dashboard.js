@@ -4,7 +4,7 @@
 
 // ── DASHBOARD ──
 var GOAL=9, dashCh={}, cmpSelected=[], cmpType='r', editingPersonIdx=-1, admSearch={assessors:'',specialists:'',departments:'',positions:''};
-(function(){var s=localStorage.getItem('pep_goal');if(s&&!isNaN(s))GOAL=parseInt(s);})();
+(function(){var s=DataStore.getGoal();if(s&&!isNaN(s))GOAL=parseInt(s);})();
 
 function dashRows(){
   var fp=document.getElementById('d-fp')?.value||'';
@@ -16,7 +16,7 @@ function dashRows(){
   var df=document.getElementById('d-df')?.value||'';
   var dt=document.getElementById('d-dt')?.value||'';
   return registry.filter(function(e){
-    if(e.archived) return false;
+    if(entryIsArchived(e)) return false;
     return (!fp||(e.period||'').startsWith(fp))&&(!ft||e.p===ft)&&
            (!fs||e.spec===fs)&&(!fl||e.oce===fl)&&(!fd||e.dzial===fd)&&(!fr||e.rating===fr)&&
            (!df||e.data>=df)&&(!dt||e.data<=dt);

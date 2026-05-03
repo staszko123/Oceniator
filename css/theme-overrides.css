@@ -104,7 +104,7 @@
 @media(min-width:1180px){
   .form-main{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"meta side" "sections side";gap:14px 18px;align-items:start;}
   .form-main>.card:first-child{grid-area:meta;}
-  .form-main>.sec,.form-main>.gold-blk{grid-column:1;}
+  .form-main>.sec,.form-main>.gold-blk,.form-main>.gen-notes-bottom{grid-column:1;}
   .form-main>.act-bar,.form-main>.res-panel{grid-column:2;align-self:start;}
   .form-main>.act-bar{position:sticky;top:88px;z-index:31;margin-bottom:10px;flex-direction:column;align-items:stretch;padding:12px;}
   .form-main>.act-bar .act-bar-txt{font-size:10px;line-height:1.45;margin-bottom:4px;}
