@@ -1017,6 +1017,7 @@ html,body{
 .start-primary,.start-secondary{
   min-height:40px;border-radius:6px;border:none;padding:0 18px;font-family:'Poppins',sans-serif;
   font-size:12px;font-weight:700;cursor:pointer;transition:transform .14s ease,box-shadow .14s ease,background .14s ease;
+  display:flex;align-items:center;justify-content:center;
 }
 .start-primary{background:var(--teal);color:#fff;box-shadow:0 10px 26px rgba(13,148,136,.35)}
 .start-primary:hover{background:var(--teal2);box-shadow:0 14px 34px rgba(13,148,136,.42);transform:translateY(-1px)}
