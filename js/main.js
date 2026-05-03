@@ -57,6 +57,13 @@ updateRoleBadge();
     link5.href='css/dark-premium.css';
     document.head.appendChild(link5);
   }
+  if(!document.getElementById('ew-actions-css')){
+    var link6=document.createElement('link');
+    link6.id='ew-actions-css';
+    link6.rel='stylesheet';
+    link6.href='css/ewidencja-actions.css';
+    document.head.appendChild(link6);
+  }
 })();
 
 function enterApp(tab){
@@ -106,4 +113,11 @@ import('./layout-adjustments.js').then(function(mod){
   if(mod && mod.initLayoutAdjustments) mod.initLayoutAdjustments();
 }).catch(function(err){
   console.error('Błąd layout', err);
+});
+
+// ── EWIDENCJA ACTIONS FIX ──
+import('./ewidencja-actions.js').then(function(mod){
+  if(mod && mod.initEwidencjaActions) mod.initEwidencjaActions();
+}).catch(function(err){
+  console.error('Błąd ewidencja actions', err);
 });
