@@ -29,6 +29,14 @@ function calcContact(p,ci){
   return{pct:Math.round(total*100),parts,pts:totalPts};
 }
 
+function applyScoreClass(el,pct){
+  el.classList.remove('score-great','score-good','score-below','score-pulse');
+  if(pct>=92) el.classList.add('score-great');
+  else if(pct>=82) el.classList.add('score-good');
+  else el.classList.add('score-below');
+  el.classList.add('score-pulse');
+}
+
 function recalc(p){
   const n=state[p].count;
   const results=Array.from({length:n},(_,ci)=>{
@@ -39,30 +47,18 @@ function recalc(p){
     const pel=document.getElementById(`${p}-rp-${ci}`);
     const ptsEl=document.getElementById(`${p}-rpts-${ci}`);
     const bel=document.getElementById(`${p}-rbg-${ci}`);
-    if(pel){pel.textContent=pct+'%';applyCol(pel,pct);}
+    if(pel){pel.textContent=pct+'%';applyCol(pel,pct);applyScoreClass(pel,pct);} 
     if(ptsEl) ptsEl.textContent=`${pts.sum} / ${pts.max} pkt`;
     if(bel) applyBadge(bel,pct);
   });
   const avg=results.length?Math.round(results.reduce((a,b)=>a+b.pct,0)/results.length):0;
   const avgPts=results.length?{sum:+(results.reduce((a,b)=>a+b.pts.sum,0)/results.length).toFixed(1),max:results[0].pts.max}:{sum:0,max:0};
   const fe=document.getElementById(`${p}-rp-f`);const fpts=document.getElementById(`${p}-rpts-f`);const fb=document.getElementById(`${p}-rbg-f`);
-  if(fe){fe.textContent=avg+'%';applyCol(fe,avg);}
+  if(fe){fe.textContent=avg+'%';applyCol(fe,avg);applyScoreClass(fe,avg);} 
   if(fpts) fpts.textContent=`${avgPts.sum} / ${avgPts.max} pkt (śr.)`;
   if(fb) applyBadge(fb,avg);
-  DEFS[p].sections.forEach(sec=>{
-    const badge=document.getElementById(`${p}-ss-${sec.key}`);if(!badge) return;
-    const perC=Array.from({length:n},(_,ci)=>{
-      const vals=Object.values(state[p].scores[sec.key]).map(arr=>arr[ci]??1);
-      const valid=vals.filter(v=>v!=='nd');
-      return valid.reduce((a,b)=>a+b,0).toFixed(1);
-    });
-    badge.textContent=perC.join(' / ')+' / '+sec.criteria.length;
-  });
 }
 
-// ══════════════════════════════════════════════
-// MISC UI
-// ══════════════════════════════════════════════
 function setGold(p,ci,val,btn){state[p].gold[ci]=val;btn.closest('.gold-btns').querySelectorAll('.gbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');recalc(p);saveDraft(p);}
 function toggleHint(id){document.getElementById(id).classList.toggle('open');}
 function toggleSec(id){document.getElementById(id).classList.toggle('closed');}
@@ -75,4 +71,3 @@ function updatePeriod(p){
   if(el) el.innerHTML=period?`<span class="period-badge">📅 ${period}</span>`:'';
   refreshSpecContext(p);
 }
-
