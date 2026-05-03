@@ -117,45 +117,28 @@ function buildForm(p){
     </aside>
     <div class="form-main">
     <div class="card">
-      <div class="meta-row">
-        <div class="mf"><label>Specjalista</label>
+      <div class="meta-row meta-row-compact">
+        <div class="mf mf-spec"><label>Specjalista</label>
           ${specialistOptions.length ?
             `<select id="${p}-spec" onchange="onSpecChange('${p}')">
               <option value="">— wybierz —</option>
               ${specialistOptions.map(s=>`<option value="${s}" ${s===savedSpec?'selected':''}>${s}</option>`).join('')}
             </select>` :
-            `<input type="text" id="${p}-spec" value="${savedSpec}" placeholder="Imię i nazwisko" oninput="refreshSpecContext('${p}')">`
-          }
-        </div>
-        <div class="mf"><label>Stanowisko</label>
-          ${getActiveAdminItems('positions').length ?
-            `<select id="${p}-stand">
-              <option value="">— wybierz —</option>
-              ${getActiveAdminItems('positions').map(s=>`<option value="${s}" ${s===savedStand?'selected':''}>${s}</option>`).join('')}
-            </select>` :
-            `<input type="text" id="${p}-stand" value="${savedStand}" placeholder="Stanowisko">`
-          }
-        </div>
-        <div class="mf"><label>Dział</label>
-          ${getActiveAdminItems('departments').length ?
-            `<select id="${p}-dzial">
-              <option value="">— wybierz —</option>
-              ${getActiveAdminItems('departments').map(s=>`<option value="${s}" ${s===savedDzial?'selected':''}>${s}</option>`).join('')}
-            </select>` :
-            `<input type="text" id="${p}-dzial" value="${savedDzial}" placeholder="Dział">`
-          }
-        </div>
-        <div class="mf"><label>Oceniający</label>
-          ${getActiveAdminItems('assessors').length ?
-            `<select id="${p}-oce" onchange="saveOce(this.value)">
-              <option value="">— wybierz —</option>
-              ${getActiveAdminItems('assessors').map(s=>`<option value="${s}" ${s===savedOce?'selected':''}>${s}</option>`).join('')}
-            </select>` :
-            `<input type="text" id="${p}-oce" value="${savedOce}" placeholder="Imię i nazwisko" oninput="saveOce(this.value)">`
+            `<input type="text" id="${p}-spec" value="${savedSpec}" placeholder="Imię i nazwisko" oninput="onSpecChange('${p}')">`
           }
         </div>
         <div class="mf"><label>Data oceny</label><input type="date" id="${p}-data" value="${savedData}" oninput="updatePeriod('${p}')"></div>
       </div>
+      <div class="meta-autofill" id="${p}-af" ${savedSpec?'':'style="display:none"'}>
+        <span class="af-chip"><span class="af-lbl">Stanowisko</span><span class="af-val" id="${p}-af-stand">${savedStand||'—'}</span></span>
+        <span class="af-sep">·</span>
+        <span class="af-chip"><span class="af-lbl">Dział</span><span class="af-val" id="${p}-af-dzial">${savedDzial||'—'}</span></span>
+        <span class="af-sep">·</span>
+        <span class="af-chip"><span class="af-lbl">Oceniający</span><span class="af-val" id="${p}-af-oce">${savedOce||'—'}</span></span>
+      </div>
+      <input type="hidden" id="${p}-stand" value="${savedStand}">
+      <input type="hidden" id="${p}-dzial" value="${savedDzial}">
+      <input type="hidden" id="${p}-oce" value="${savedOce}">
       <div class="contact-bar">
         <span class="contact-bar-label">Liczba ${countLabel}:</span>
         <button class="cb-btn" onclick="changeCount('${p}',-1)" id="${p}-btn-minus" ${n<=MIN_CONTACTS?'disabled':''}>−</button>
@@ -543,17 +526,28 @@ body{font-family:'Poppins',sans-serif;background:#fff;color:#0F172A;font-size:11
 function saveOce(val){if(val)localStorage.setItem('pep_saved_oce',val);}
 
 function onSpecChange(p){
-  var spec = document.getElementById(p+'-spec')?.value;
-  if(!spec) return;
-  var person=getPersonByName(spec);
-  // Find last card for this spec to auto-fill stand/dzial
-  var last = registry.slice().reverse().find(function(e){return e.spec===spec;});
-  var standEl = document.getElementById(p+'-stand');
-  var dzialEl = document.getElementById(p+'-dzial');
-  var oceEl = document.getElementById(p+'-oce');
-  if(standEl && (person?.position||last?.stand)) standEl.value = person?.position||last.stand;
-  if(dzialEl && (person?.department||last?.dzial)) dzialEl.value = person?.department||last.dzial;
-  if(oceEl && (person?.leader||last?.oce)){oceEl.value = person?.leader||last.oce;saveOce(oceEl.value);}
+  var spec = document.getElementById(p+'-spec')?.value||'';
+  var person = spec ? getPersonByName(spec) : null;
+  var last = spec ? registry.slice().reverse().find(function(e){return e.spec===spec;}) : null;
+  var stand = (person&&person.position)||last?.stand||'';
+  var dzial = (person&&person.department)||last?.dzial||'';
+  var oce   = (person&&person.leader)||last?.oce||localStorage.getItem('pep_saved_oce')||'';
+  // update hidden inputs
+  var standEl=document.getElementById(p+'-stand');
+  var dzialEl=document.getElementById(p+'-dzial');
+  var oceEl=document.getElementById(p+'-oce');
+  if(standEl) standEl.value=stand;
+  if(dzialEl) dzialEl.value=dzial;
+  if(oceEl){oceEl.value=oce;if(oce)saveOce(oce);}
+  // update display chips
+  var afEl=document.getElementById(p+'-af');
+  if(afEl) afEl.style.display=spec?'':'none';
+  var afStand=document.getElementById(p+'-af-stand');
+  var afDzial=document.getElementById(p+'-af-dzial');
+  var afOce=document.getElementById(p+'-af-oce');
+  if(afStand) afStand.textContent=stand||'—';
+  if(afDzial) afDzial.textContent=dzial||'—';
+  if(afOce)   afOce.textContent=oce||'—';
   refreshSpecContext(p);
 }
 
