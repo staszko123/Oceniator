@@ -61,6 +61,45 @@
 .meta-row.meta-row-compact{position:sticky;top:0;z-index:16;background:var(--surface);box-shadow:0 8px 20px rgba(15,23,42,.06);}[data-theme="dark"] .meta-row.meta-row-compact{box-shadow:0 8px 22px rgba(0,0,0,.28);}
 .sec.done{border-left:4px solid var(--green);}.sec.in-progress{border-left:4px solid var(--amber);}.sec.needs-attention{border-left:4px solid var(--red);}.ux-saved-pulse{animation:uxPulse .45s ease;}@keyframes uxPulse{0%{box-shadow:0 0 0 0 rgba(13,148,136,.28)}100%{box-shadow:0 0 0 10px rgba(13,148,136,0)}}
 
+/* Specialist meta in left context column */
+.spec-meta-card .meta-row,
+.spec-meta-card .meta-row.meta-row-compact{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px;
+  position:static !important;
+  box-shadow:none !important;
+  border-bottom:1px solid var(--border);
+}
+
+.spec-meta-card .mf{
+  width:100%;
+  border-right:0 !important;
+  border-bottom:1px solid var(--border);
+}
+
+.spec-meta-card .mf:last-child{
+  border-bottom:0;
+}
+
+.spec-meta-card select,
+.spec-meta-card input{
+  width:100%;
+  min-width:0;
+}
+
+.spec-meta-card .meta-autofill{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  padding:10px 12px;
+}
+
+.spec-meta-card .af-sep{
+  display:none;
+}
+
 /* Right sticky result panel */
 @media(min-width:1180px){
   .form-main{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"meta side" "sections side";gap:14px 18px;align-items:start;}
