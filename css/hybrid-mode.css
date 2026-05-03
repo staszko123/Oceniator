@@ -1,7 +1,7 @@
 /* Tryb hybrydowy oceny: standard + szybkie zaznaczanie błędów */
 
 .hybrid-switch{
-  grid-column:1;
+  grid-column:1 !important;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -21,7 +21,14 @@
 .hybrid-tab{border:0;border-radius:999px;padding:8px 12px;background:transparent;color:var(--text2);font-size:11px;font-weight:800;cursor:pointer;}
 .hybrid-tab.on{background:var(--teal);color:#fff;box-shadow:0 8px 18px rgba(13,148,136,.22);}
 
-.hybrid-quick{display:none;grid-column:1;margin-bottom:12px;min-width:0;}
+.contact-data-card{
+  grid-column:1 !important;
+  grid-row:auto !important;
+  width:100%;
+  min-width:0;
+}
+
+.hybrid-quick{display:none;grid-column:1 !important;margin-bottom:12px;min-width:0;}
 .hybrid-quick.on{display:block;}
 .hybrid-mode .sec{display:none;}
 
