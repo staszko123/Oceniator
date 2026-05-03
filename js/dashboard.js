@@ -15,7 +15,7 @@ function dashRows(){
   var fr=document.getElementById('d-fr')?.value||'';
   var df=document.getElementById('d-df')?.value||'';
   var dt=document.getElementById('d-dt')?.value||'';
-  return registry.filter(function(e){
+  return scopedRegistry().filter(function(e){
     if(entryIsArchived(e)) return false;
     return (!fp||(e.period||'').startsWith(fp))&&(!ft||e.p===ft)&&
            (!fs||e.spec===fs)&&(!fl||e.oce===fl)&&(!fd||e.dzial===fd)&&(!fr||e.rating===fr)&&
@@ -26,19 +26,26 @@ function dashRows(){
 function buildDashboard(){
   var wrap=document.getElementById('wrap-dash');
   if(!wrap) return;
-  var years=[...new Set(registry.map(function(e){return (e.data||'').split('-')[0];}).filter(Boolean))].sort();
-  var specs=[...new Set(registry.map(function(e){return e.spec;}).filter(Boolean))].sort();
-  var leaders=[...new Set(registry.map(function(e){return e.oce;}).filter(Boolean))].sort();
-  var dzialy=[...new Set(registry.map(function(e){return e.dzial;}).filter(Boolean))].sort();
+  var baseRows=scopedRegistry().filter(function(e){return !entryIsArchived(e);});
+  var years=[...new Set(baseRows.map(function(e){return (e.data||'').split('-')[0];}).filter(Boolean))].sort();
+  var specs=[...new Set(baseRows.map(function(e){return e.spec;}).filter(Boolean))].sort();
+  var leaders=[...new Set(baseRows.map(function(e){return e.oce;}).filter(Boolean))].sort();
+  var dzialy=[...new Set(baseRows.map(function(e){return e.dzial;}).filter(Boolean))].sort();
+  var currentPeriod=currentPeriodValue();
+  var periodSet=new Set(baseRows.map(function(e){return e.period;}).filter(Boolean));
+  if(currentPeriod) periodSet.add(currentPeriod);
+  var periodOptions=[...periodSet].sort();
   var po=years.flatMap(function(y){return [1,2,3].map(function(n){return '<option value="P'+n+' '+y+'">P'+n+' '+y+'</option>';});}).join('');
+  po=periodOptions.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
   var so=specs.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
   var lo=leaders.map(function(l){return '<option value="'+l+'">'+l+'</option>';}).join('');
   var dzo=dzialy.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
+  var leaderScope=activeLeaderScope();
   wrap.innerHTML='<div class="dash-filters">'+
     '<div class="df"><label>Okres:</label><select id="d-fp" onchange="renderDash()"><option value="">Wszystkie</option>'+po+'<option value="P1">Każde P1</option><option value="P2">Każde P2</option><option value="P3">Każde P3</option></select></div>'+
     '<div class="df"><label>Typ:</label><select id="d-ft" onchange="renderDash()"><option value="">Wszystkie</option><option value="r">Rozmowy</option><option value="m">Maile</option><option value="s">Systemy</option></select></div>'+
     '<div class="df"><label>Specjalista:</label><select id="d-fs" onchange="renderDash()"><option value="">Wszyscy</option>'+so+'</select></div>'+
-    '<div class="df"><label>Lider:</label><select id="d-fl" onchange="renderDash()"><option value="">Wszyscy</option>'+lo+'</select></div>'+
+    '<div class="df"><label>Lider:</label><select id="d-fl" onchange="renderDash()" '+(leaderScope?'disabled':'')+'><option value="">Wszyscy</option>'+lo+'</select></div>'+
     '<div class="df"><label>Dział:</label><select id="d-fd" onchange="renderDash()"><option value="">Wszystkie</option>'+dzo+'</select></div>'+
     '<div class="df"><label>Ocena:</label><select id="d-fr" onchange="renderDash()"><option value="">Wszystkie</option><option value="great">Bardzo dobry</option><option value="good">Dobry</option><option value="below">Poniżej std.</option></select></div>'+
     '<div class="df"><label>Od:</label><input type="date" id="d-df" onchange="renderDash()"></div>'+
@@ -47,10 +54,18 @@ function buildDashboard(){
   '</div>'+
   '<div id="d-kpi"></div><div id="d-goal"></div>'+
   '<div class="dash-g2" id="d-r1"></div><div class="dash-g2" id="d-r2"></div><div class="dash-g1" id="d-r3"></div><div class="dash-g1" id="d-r4"></div>';
+  var fp=document.getElementById('d-fp');
+  if(fp&&currentPeriod&&periodSet.has(currentPeriod)) fp.value=currentPeriod;
+  var fl=document.getElementById('d-fl');
+  if(fl&&leaderScope) fl.value=leaderScope;
   renderDash();
 }
 function resetDashF(){
   ['d-fp','d-ft','d-fs','d-fl','d-fd','d-fr','d-df','d-dt'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var fp=document.getElementById('d-fp'), cp=currentPeriodValue();
+  if(fp&&cp) fp.value=cp;
+  var fl=document.getElementById('d-fl'), leader=activeLeaderScope();
+  if(fl&&leader) fl.value=leader;
   renderDash();
 }
 function renderDash(){

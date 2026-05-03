@@ -8,9 +8,10 @@
 function buildRaporty(){
   var wrap=document.getElementById('wrap-raporty');
   if(!wrap) return;
-  var specs=[].concat([]).concat(registry.map(function(e){return e.spec;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-  var dzialy=registry.map(function(e){return e.dzial;}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-  var periods=registry.map(function(e){return e.period;}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var baseRows=scopedRegistry();
+  var specs=[].concat([]).concat(baseRows.map(function(e){return e.spec;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var dzialy=baseRows.map(function(e){return e.dzial;}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var periods=baseRows.map(function(e){return e.period;}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
   var h='';
   h+='<div style="margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:var(--text)">📊 Raporty</div>';
   h+='<div style="font-size:11px;color:var(--text3);margin-top:3px">Generuj i pobierz raporty CSV z danych ewidencji</div></div>';
@@ -86,7 +87,7 @@ function repGetFiltered(){
   var period=document.getElementById('rep-f-period')?.value||'';
   var od=document.getElementById('rep-f-od')?.value||'';
   var doo=document.getElementById('rep-f-do')?.value||'';
-  return registry.filter(function(e){
+  return scopedRegistry().filter(function(e){
     if(entryIsArchived(e)) return false;
     if(spec && e.spec!==spec) return false;
     if(dzial && e.dzial!==dzial) return false;

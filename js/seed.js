@@ -1,69 +1,230 @@
-/* ══════════════════════════════════════════════
-   SEED — test data generator
-══════════════════════════════════════════════ */
+/* ===============================================================
+   SEED - demo data generator
+=============================================================== */
+
+var DEMO_SEED_VERSION = 'demo-4x12x120-current-period-2026-05-04';
+
+function demoRand(seed){
+  var x = seed % 2147483647;
+  if(x <= 0) x += 2147483646;
+  return function(){
+    x = x * 16807 % 2147483647;
+    return (x - 1) / 2147483646;
+  };
+}
+
+function demoPick(arr, idx){
+  return arr[idx % arr.length];
+}
+
+function buildDemoOrg(){
+  var departments = [
+    {
+      name:'Dział Obsługi Klienta PeP',
+      positions:['Specjalista ds. Obsługi Klienta','Starszy Specjalista ds. Obsługi Klienta','Młodszy Specjalista ds. Obsługi Klienta'],
+      leaders:['Alicja Wrona','Mateusz Cieślak','Ewa Sobczak'],
+    },
+    {
+      name:'Dział Rozliczeń P24',
+      positions:['Specjalista ds. Rozliczeń','Starszy Specjalista ds. Rozliczeń','Młodszy Specjalista ds. Rozliczeń'],
+      leaders:['Rafał Kubiak','Joanna Malinowska','Paweł Michalski'],
+    },
+    {
+      name:'Dział Wsparcia Technicznego',
+      positions:['Specjalista ds. Wsparcia Technicznego','Starszy Specjalista ds. Systemów','Młodszy Specjalista ds. Wsparcia'],
+      leaders:['Magdalena Baran','Tomasz Król','Katarzyna Wójcik'],
+    },
+    {
+      name:'Dział Operacji i Reklamacji',
+      positions:['Specjalista ds. Operacji','Specjalista ds. Reklamacji','Starszy Specjalista ds. Procesów'],
+      leaders:['Marcin Lis','Natalia Zielińska','Grzegorz Mazur'],
+    },
+  ];
+  var firstNames = ['Anna','Piotr','Marta','Tomasz','Karolina','Michał','Natalia','Bartosz','Monika','Kamil','Aleksandra','Jakub','Patrycja','Adam','Dominika','Łukasz','Weronika','Daniel','Klaudia','Szymon'];
+  var lastNames = ['Kowalska','Wiśniewski','Dąbrowska','Zając','Lewandowska','Kowalczyk','Szymańska','Nowak','Kamińska','Wójcik','Kaczmarek','Mazur','Piotrowska','Grabowski','Pawlak','Król','Jabłońska','Wieczorek','Stępień','Baran','Lis','Sikora','Olszewska','Czarnecki'];
+  var people = [];
+  var leaders = [];
+  var id = 1000;
+
+  departments.forEach(function(dep, depIdx){
+    dep.leaders.forEach(function(leader, leaderIdx){
+      leaders.push(leader);
+      for(var i=0;i<10;i++){
+        var name = firstNames[(depIdx*7 + leaderIdx*5 + i) % firstNames.length] + ' ' + lastNames[(depIdx*11 + leaderIdx*9 + i*3) % lastNames.length];
+        if(people.some(function(p){return p.name === name;})){
+          name += ' ' + String.fromCharCode(65 + depIdx) + (leaderIdx + 1);
+        }
+        people.push({
+          id:id++,
+          name:name,
+          leader:leader,
+          department:dep.name,
+          position:dep.positions[i % dep.positions.length],
+          active:true,
+        });
+      }
+    });
+  });
+
+  return {
+    departments:departments.map(function(d){return d.name;}),
+    leaders:leaders,
+    positions:departments.reduce(function(all,d){return all.concat(d.positions);},[]).filter(function(v,i,a){return a.indexOf(v)===i;}).sort(),
+    people:people,
+  };
+}
+
+function valueForScore(score, rnd){
+  if(score >= .90) return rnd() < .88 ? 1 : (rnd() < .75 ? .5 : 'nd');
+  if(score >= .78) return rnd() < .68 ? 1 : (rnd() < .72 ? .5 : 0);
+  if(score >= .66) return rnd() < .45 ? 1 : (rnd() < .68 ? .5 : 0);
+  return rnd() < .28 ? 1 : (rnd() < .62 ? .5 : 0);
+}
+
+function buildDemoCard(person, cardIdx, personIdx){
+  var rnd = demoRand(9000 + personIdx * 37 + cardIdx * 101);
+  var typeCycle = ['r','m','s','r','m','s','r','m','s','r'];
+  var p = typeCycle[cardIdx % typeCycle.length];
+  var def = DEFS[p];
+  var contactCount = p === 'r' ? 3 + (cardIdx % 2) : (p === 'm' ? 2 + (cardIdx % 3 === 0 ? 1 : 0) : 2);
+  var dates = [
+    '2025-01-17','2025-02-21','2025-04-08','2025-05-16','2025-07-09',
+    '2025-08-22','2025-09-18','2025-10-24','2025-12-05','2026-05-04'
+  ];
+  var data = dates[cardIdx];
+  var leaderBias = ((personIdx % 12) - 5) * .012;
+  var personBias = ((personIdx % 10) - 4) * .01;
+  var trend = (cardIdx - 4) * .012;
+  var base = Math.max(.58, Math.min(.99, .82 + leaderBias + personBias + trend));
+  var ss = {};
+  var sn = {};
+
+  def.sections.forEach(function(sec, secIdx){
+    ss[sec.key] = {};
+    sn[sec.key] = Array(contactCount).fill('');
+    sec.criteria.forEach(function(_, cri){
+      ss[sec.key][cri] = Array.from({length:contactCount}, function(_, ci){
+        var sectionBias = secIdx === 0 ? .02 : (secIdx === 1 ? 0 : -.015);
+        var score = base + sectionBias + (rnd() - .5) * .16 - (cri % 5 === 0 && rnd() < .18 ? .18 : 0) + (ci % 3 === 0 ? .015 : 0);
+        return valueForScore(score, rnd);
+      });
+    });
+  });
+
+  var results = Array.from({length:contactCount}, function(_, ci){
+    var total = 0;
+    var parts = {};
+    var pts = {sum:0,max:0};
+    def.sections.forEach(function(sec){
+      var vals = sec.criteria.map(function(_, cri){return ss[sec.key][cri][ci];});
+      var valid = vals.filter(function(v){return v !== 'nd';});
+      var sum = valid.length ? valid.reduce(function(a,b){return a + b;}, 0) : valid.length;
+      var ratio = valid.length ? sum / valid.length : 1;
+      total += ratio * sec.w;
+      parts[sec.key] = Math.round(ratio * 100);
+      pts.sum += sum;
+      pts.max += valid.length;
+    });
+    return {finalPct:Math.round(total * 100),parts:parts,pts:pts};
+  });
+
+  var gold = Array.from({length:contactCount}, function(_, i){return (cardIdx + i + personIdx) % 19 === 0 ? .5 : 0;});
+  results = results.map(function(r, i){
+    var bonus = gold[i] || 0;
+    return Object.assign({}, r, {finalPct:bonus > 0 && r.finalPct < 100 ? Math.min(100, r.finalPct + bonus * 10) : r.finalPct});
+  });
+
+  var avg = Math.round(results.reduce(function(a,b){return a + b.finalPct;}, 0) / results.length);
+  var secAvg = {};
+  def.sections.forEach(function(sec){
+    var vals = results.map(function(r){return r.parts[sec.key];});
+    secAvg[sec.key] = Math.round(vals.reduce(function(a,b){return a + b;}, 0) / vals.length);
+  });
+
+  var statuses = ['submitted','review','approved','submitted','submitted','approved','review','submitted','submitted','review'];
+  var status = statuses[(cardIdx + personIdx) % statuses.length];
+  return {
+    id:1800000000000 + personIdx * 100 + cardIdx,
+    p:p,
+    status:status,
+    locked:status === 'approved',
+    archived:status === 'archived',
+    createdAt:data + 'T09:00:00.000Z',
+    spec:person.name,
+    stand:person.position,
+    dzial:person.department,
+    oce:person.leader,
+    data:data,
+    period:periodOf(data),
+    avgFinal:avg,
+    secAvg:secAvg,
+    contactResults:results.map(function(r){return {pct:r.finalPct,pts:r.pts};}),
+    rating:avg >= 92 ? 'great' : avg >= 82 ? 'good' : 'below',
+    notes:demoPick([
+      'Wynik do omówienia na najbliższym spotkaniu 1:1.',
+      'Widoczna poprawa jakości w porównaniu do poprzedniego okresu.',
+      'Do utrzymania standard komunikacji i kompletność zapisów.',
+      'Warto dopracować konsekwencję w dokumentowaniu spraw.'
+    ], personIdx + cardIdx),
+    contactCount:contactCount,
+    ids:Array.from({length:contactCount}, function(_, i){
+      return ({r:'CALL',m:'MAIL',s:'SYS'}[p]) + '-' + data.replace(/-/g,'') + '-' + String(personIdx + 1).padStart(3,'0') + '-' + (i + 1);
+    }),
+    gold:gold,
+    goldDesc:gold.some(function(v){return v > 0;}) ? 'Doceniono samodzielne domknięcie niestandardowej sprawy klienta.' : '',
+    snapshotScores:ss,
+    snapshotNotes:sn,
+    statusHistory:[]
+  };
+}
+
+function buildDemoRegistry(org){
+  var cards = [];
+  org.people.forEach(function(person, personIdx){
+    for(var i=0;i<10;i++){
+      cards.push(buildDemoCard(person, i, personIdx));
+    }
+  });
+  return cards.sort(function(a,b){return a.data < b.data ? -1 : (a.data > b.data ? 1 : a.spec.localeCompare(b.spec,'pl'));});
+}
+
+function installDemoData(force){
+  var versionKey = 'pep_demo_seed_version';
+  if(!force && DataStore.getValue(versionKey, '') === DEMO_SEED_VERSION) return false;
+  var org = buildDemoOrg();
+  adminData.assessors = org.leaders.slice().sort(function(a,b){return a.localeCompare(b,'pl');});
+  adminData.specialists = org.people.map(function(p){return p.name;}).sort(function(a,b){return a.localeCompare(b,'pl');});
+  adminData.departments = org.departments.slice().sort(function(a,b){return a.localeCompare(b,'pl');});
+  adminData.positions = org.positions.slice();
+  adminData.people = org.people.slice().sort(function(a,b){return a.name.localeCompare(b.name,'pl');});
+  adminData.archived = {assessors:[],specialists:[],departments:[],positions:[]};
+  adminData.history = [{
+    ts:new Date().toISOString(),
+    type:'Demo',
+    desc:'Wygenerowano strukturę: 4 działy, 12 liderów, 120 specjalistów i 1200 kart ocen.',
+    role:'admin'
+  }];
+  registry = buildDemoRegistry(org);
+  normalizeRegistry();
+  saveAdminData();
+  saveRegistry();
+  setDrafts({});
+  DataStore.setSavedAssessor('');
+  DataStore.setValue(versionKey, DEMO_SEED_VERSION);
+  if(typeof updateBadge === 'function') updateBadge();
+  return true;
+}
 
 function seedTestData(){
-  if(registry.length>0) return;
-  var SPECS=[
-    {spec:'Anna Kowalska',stand:'Specjalista ds. Obsługi Klienta',dzial:'Dział Obsługi PeP'},
-    {spec:'Piotr Wiśniewski',stand:'Młodszy Specjalista',dzial:'Dział Obsługi PeP'},
-    {spec:'Marta Dąbrowska',stand:'Specjalista ds. Rozliczeń',dzial:'Dział Rozliczeń P24'},
-    {spec:'Tomasz Zając',stand:'Specjalista ds. Obsługi Klienta',dzial:'Dział Obsługi PeP'},
-    {spec:'Karolina Lewandowska',stand:'Starszy Specjalista',dzial:'Dział Rozliczeń P24'},
-    {spec:'Michał Kowalczyk',stand:'Specjalista ds. Systemów',dzial:'Dział Wsparcia Technicznego'},
-    {spec:'Natalia Szymańska',stand:'Młodszy Specjalista',dzial:'Dział Obsługi PeP'},
-    {spec:'Bartosz Nowak',stand:'Specjalista ds. Rozliczeń',dzial:'Dział Rozliczeń P24'}
-  ];
-  var OCE=['Jan Kowalczyk (TL)','Agnieszka Maj (TL)','Robert Wróbel (TL)'];
-  var CARDS=[
-    {p:'r',si:0,period:'P1 2025',data:'2025-01-15',n:3},{p:'r',si:1,period:'P1 2025',data:'2025-01-22',n:3},
-    {p:'r',si:2,period:'P1 2025',data:'2025-02-10',n:2},{p:'r',si:3,period:'P1 2025',data:'2025-02-18',n:3},
-    {p:'m',si:0,period:'P1 2025',data:'2025-01-28',n:3},{p:'m',si:4,period:'P1 2025',data:'2025-03-05',n:2},
-    {p:'s',si:5,period:'P1 2025',data:'2025-02-25',n:3},{p:'r',si:6,period:'P1 2025',data:'2025-03-14',n:3},
-    {p:'r',si:7,period:'P1 2025',data:'2025-03-20',n:2},{p:'m',si:2,period:'P1 2025',data:'2025-03-28',n:3},
-    {p:'r',si:0,period:'P2 2025',data:'2025-05-08',n:3},{p:'r',si:1,period:'P2 2025',data:'2025-05-15',n:3},
-    {p:'r',si:3,period:'P2 2025',data:'2025-06-04',n:3},{p:'r',si:4,period:'P2 2025',data:'2025-06-11',n:2},
-    {p:'m',si:0,period:'P2 2025',data:'2025-05-22',n:3},{p:'m',si:5,period:'P2 2025',data:'2025-06-19',n:2},
-    {p:'s',si:1,period:'P2 2025',data:'2025-07-03',n:3},{p:'s',si:6,period:'P2 2025',data:'2025-07-10',n:2},
-    {p:'r',si:2,period:'P2 2025',data:'2025-07-17',n:3},{p:'m',si:7,period:'P2 2025',data:'2025-08-05',n:3},
-    {p:'r',si:0,period:'P3 2025',data:'2025-09-10',n:3},{p:'r',si:3,period:'P3 2025',data:'2025-09-18',n:3},
-    {p:'r',si:1,period:'P3 2025',data:'2025-10-07',n:2},{p:'r',si:5,period:'P3 2025',data:'2025-10-15',n:3},
-    {p:'m',si:2,period:'P3 2025',data:'2025-09-25',n:3},{p:'m',si:4,period:'P3 2025',data:'2025-10-22',n:2},
-    {p:'s',si:0,period:'P3 2025',data:'2025-11-06',n:3},{p:'s',si:3,period:'P3 2025',data:'2025-11-13',n:3},
-    {p:'r',si:6,period:'P3 2025',data:'2025-11-20',n:3},{p:'m',si:7,period:'P3 2025',data:'2025-12-04',n:2}
-  ];
-  var PROFILES=[[1,1,1,1,0.5],[1,1,0.5,1,1],[0.5,1,0.5,0.5,1],[1,1,1,0.5,0.5],[1,1,1,1,1],[0.5,0.5,1,0.5,0],[1,0.5,1,1,0.5],[0.5,1,0.5,1,1]];
-  function rnd(prof){var pool=prof.concat([1,1,0.5,0,'nd']);return pool[Math.floor(Math.random()*pool.length)];}
-  var cards=[];
-  CARDS.forEach(function(def,idx){
-    var sp=SPECS[def.si],prof=PROFILES[def.si],ddef=DEFS[def.p],n=def.n;
-    var ss={},sn={};
-    ddef.sections.forEach(function(sec){
-      ss[sec.key]={};
-      sec.criteria.forEach(function(_,ci){ss[sec.key][ci]=Array.from({length:n},function(){return rnd(prof);});});
-      sn[sec.key]=Array(n).fill('');
-    });
-    var results=Array.from({length:n},function(_,ci){
-      var total=0,parts={};
-      ddef.sections.forEach(function(sec){
-        var vals=sec.criteria.map(function(_,cri){return ss[sec.key][cri][ci];});
-        var valid=vals.filter(function(v){return v!=='nd';});
-        var sum=valid.length?valid.reduce(function(a,b){return a+b;},0):0;
-        total+=valid.length?sum/valid.length*sec.w:sec.w;
-        parts[sec.key]=Math.round(valid.length?sum/valid.length*100:100);
-      });
-      return{finalPct:Math.round(total*100),parts:parts};
-    });
-    var avg=Math.round(results.reduce(function(a,b){return a+b.finalPct;},0)/results.length);
-    var sa={};ddef.sections.forEach(function(sec){var vals=results.map(function(r){return r.parts[sec.key];});sa[sec.key]=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);});
-    cards.push({id:1700000000000+idx*10000,p:def.p,status:idx%5===0?'review':idx%7===0?'approved':'submitted',locked:idx%7===0,spec:sp.spec,stand:sp.stand,dzial:sp.dzial,oce:OCE[idx%OCE.length],data:def.data,period:def.period,avgFinal:avg,secAvg:sa,contactResults:results.map(function(r){return{pct:r.finalPct,pts:{sum:0,max:0}};}),rating:avg>=92?'great':avg>=82?'good':'below',notes:'',contactCount:n,ids:Array.from({length:n},function(_,i){return 'ID-'+(10000+idx*10+i)+' / '+def.data;}),gold:Array(n).fill(0),goldDesc:'',snapshotScores:ss,snapshotNotes:sn});
-  });
-  registry.push.apply(registry,cards);
-  saveRegistry();updateBadge();
+  if(registry.length > 0) return;
+  installDemoData(true);
 }
+
 function loadSeedData(){
-  if(!confirm('Wyczyścić ewidencję i załadować 30 przykładowych kart?')) return;
-  registry=[];seedTestData();renderEw();showToast('Załadowano 30 kart testowych','ok');
+  if(!confirm('Wyczyścić bazę specjalistów, liderów i ewidencję, a potem załadować dane demo: 4 działy, 12 liderów, 120 specjalistów i 1200 kart?')) return;
+  installDemoData(true);
+  if(typeof buildAdmin === 'function') buildAdmin();
+  if(typeof buildForm === 'function') ['r','m','s'].forEach(buildForm);
+  renderEw();
+  showToast('Załadowano komplet danych demo: 120 specjalistów i 1200 kart','ok');
 }
-
-

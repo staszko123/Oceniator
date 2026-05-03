@@ -15,7 +15,7 @@ function filterRows(){
   const fs=document.getElementById('ew-fs')?.value||'';
   const fa=document.getElementById('ew-fa')?.value||'active';
   const fq=document.getElementById('ew-fq')?.value?.toLowerCase()||'';
-  return registry.filter(e=>
+  return scopedRegistry().filter(e=>
     (fa==='all'||(fa==='active'?!entryIsArchived(e):entryStatus(e)===fa))&&
     (!ft||e.p===ft)&&
     (!fr||e.rating===fr)&&
@@ -62,7 +62,7 @@ function renderEw(){
   const rows=filterRows();
   const specSel=document.getElementById('ew-fs');
   if(specSel){
-    const specs=[...new Set(registry.filter(e=>!entryIsArchived(e)).map(e=>e.spec))].filter(Boolean).sort();
+    const specs=[...new Set(scopedRegistry().filter(e=>!entryIsArchived(e)).map(e=>e.spec))].filter(Boolean).sort();
     const cur=specSel.value;
     specSel.innerHTML='<option value="">Wszyscy</option>'+specs.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
   }
@@ -187,16 +187,16 @@ function sortBy(col){
 }
 
 // ENTRY ACTIONS
-function previewEntry(id){const e=registry.find(r=>r.id===id);if(e) openPrintView(e);}
+function previewEntry(id){const e=registry.find(r=>r.id===id);if(e&&entryInScope(e)) openPrintView(e);}
 function editEntry(id){
-  const e=registry.find(r=>r.id===id);if(!e||entryIsLocked(e)||!can('editOwn')) return;
+  const e=registry.find(r=>r.id===id);if(!e||!entryInScope(e)||entryIsLocked(e)||!can('editOwn')) return;
   editingId=id;
   document.getElementById('edit-notes').value=e.notes||'';
   openModal('edit-modal');
 }
 function saveEditNotes(){
   const e=registry.find(r=>r.id===editingId);
-  if(e){e.notes=document.getElementById('edit-notes').value;saveRegistry();logChange('Edycja','Zmieniono notatkę: '+(e.spec||''));}
+  if(e&&entryInScope(e)){e.notes=document.getElementById('edit-notes').value;saveRegistry();logChange('Edycja','Zmieniono notatkę: '+(e.spec||''));}
   closeModal('edit-modal');renderEw();showToast('Notatka zaktualizowana','ok');
 }
 function toggleLock(id){
@@ -216,7 +216,7 @@ document.addEventListener('click',function(){
 });
 function advanceEntryStatus(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||entryIsArchived(e)||!can('archive')) return;
+  if(!e||!entryInScope(e)||entryIsArchived(e)||!can('archive')) return;
   var cur=entryStatus(e);
   var next=ENTRY_STATUS[cur].next;
   setEntryStatus(e,next,'Zmiana z ewidencji');
@@ -225,37 +225,37 @@ function advanceEntryStatus(id){
 }
 function archiveEntry(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||!can('archive')){showToast('Brak uprawnień','warn');return;}
+  if(!e||!entryInScope(e)||!can('archive')){showToast('Brak uprawnień','warn');return;}
   e.previousStatus=entryStatus(e);
   setEntryStatus(e,'archived','Archiwizacja');
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Zarchiwizowano kartę: '+(e.spec||''));showToast('Karta przeniesiona do archiwum','ok');
 }
 function restoreEntry(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||!can('archive')) return;
+  if(!e||!entryInScope(e)||!can('archive')) return;
   setEntryStatus(e,e.previousStatus&&e.previousStatus!=='archived'?e.previousStatus:'submitted','Przywrócenie z archiwum');
   delete e.previousStatus;
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Przywrócono kartę: '+(e.spec||''));showToast('Karta przywrócona','ok');
 }
 function deleteEntry(id){
   const e=registry.find(r=>r.id===id);
-  if(!e||entryStatus(e)==='approved'||!can('hardDelete')){showToast('Tylko administrator może trwale usuwać niezatwierdzone karty','warn');return;}
+  if(!e||!entryInScope(e)||entryStatus(e)==='approved'||!can('hardDelete')){showToast('Tylko administrator może trwale usuwać niezatwierdzone karty','warn');return;}
   if(!confirm('Usunąć tę kartę trwale? Lepiej użyć archiwizacji, jeśli karta ma zostać w historii.')) return;
   registry=registry.filter(r=>r.id!==id);
   saveRegistry();updateBadge();renderEw();logChange('Usunięcie','Trwale usunięto kartę: '+(e.spec||''));showToast('Karta usunięta trwale');
 }
 function copyRow(id){
-  const e=registry.find(r=>r.id===id);if(!e) return;
+  const e=registry.find(r=>r.id===id);if(!e||!entryInScope(e)) return;
   const sk=SK[e.p];
   const txt=[e.spec,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating)].join('\t');
   navigator.clipboard.writeText(txt).then(()=>showToast('Skopiowano wiersz'));
 }
-function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!entryIsArchived(e)).length;}
+function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=scopedRegistry().filter(e=>!entryIsArchived(e)).length;}
 function clearReg(){
   if(!can('archive')){showToast('Brak uprawnień','warn');return;}
-  var active=registry.filter(e=>!entryIsArchived(e)).length;
+  var active=scopedRegistry().filter(e=>!entryIsArchived(e)).length;
   if(!confirm(`Zarchiwizować wszystkie aktywne karty (${active})? Dane pozostaną dostępne w filtrze Archiwum.`)) return;
-  registry.forEach(e=>{if(!entryIsArchived(e)){e.previousStatus=entryStatus(e);setEntryStatus(e,'archived','Archiwizacja zbiorcza');}});
+  registry.forEach(e=>{if(entryInScope(e)&&!entryIsArchived(e)){e.previousStatus=entryStatus(e);setEntryStatus(e,'archived','Archiwizacja zbiorcza');}});
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Zarchiwizowano wszystkie aktywne karty');showToast('Aktywne karty zarchiwizowane');
 }
 // EXPORT / IMPORT
@@ -332,6 +332,7 @@ function editScores(id){
   var eid=Number(id);
   var e=registry.find(function(r){return r.id===eid;});
   if(!e){showToast('Nie znaleziono karty','err');return;}
+  if(!entryInScope(e)){showToast('Brak dostępu do tej karty','warn');return;}
   if(entryIsArchived(e)||!can('editOwn')){showToast('Brak uprawnień lub karta w archiwum','warn');return;}
   if(entryStatus(e)==='approved'){showToast('Karta zatwierdzona','warn');return;}
   seId=eid;
@@ -395,6 +396,7 @@ function seSet(sk,ci,c2,val,btn){
 function saveScoreEdit(){
   var e=registry.find(function(r){return r.id===seId;});
   if(!e) return;
+  if(!entryInScope(e)){showToast('Brak dostępu do tej karty','warn');return;}
   var def=DEFS[e.p],n=e.contactCount||3;
   def.sections.forEach(function(sec){
     seNotes[sec.key]=Array.from({length:n},function(_,c2){

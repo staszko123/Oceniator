@@ -3,16 +3,18 @@
 ══════════════════════════════════════════════ */
 
 function switchTab(name,el){
+  if(name==='myteam'&&!activeLeaderScope()){showToast('Zakładka Mój Zespół jest dostępna dla liderów','warn');return;}
   if(name==='dashboard'&&!can('dashboard')){showToast('Bieżąca rola nie ma dostępu do Dashboardu','warn');return;}
   if(name==='raporty'&&!can('reports')){showToast('Bieżąca rola nie ma dostępu do Raportów','warn');return;}
-  if(name==='admin'&&!can('adminConfig')&&activeRole()!=='leader'){showToast('Bieżąca rola nie ma dostępu do Panelu Admina','warn');return;}
-  var titles={rozmowy:'Ocena Rozmów',maile:'Ocena Maili',systemy:'Działania w Systemach',dashboard:'Dashboard',ewidencja:'Ewidencja Kart',raporty:'Raporty',admin:'Panel administracyjny'};
+  if(name==='admin'&&!can('adminConfig')){showToast('Bieżąca rola nie ma dostępu do Panelu Admina','warn');return;}
+  var titles={start:'Start',rozmowy:'Ocena Rozmów',maile:'Ocena Maili',systemy:'Działania w Systemach',myteam:'Mój Zespół',dashboard:'Dashboard',ewidencja:'Ewidencja Kart',raporty:'Raporty',admin:'Panel administracyjny'};
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('on');});
   document.getElementById('tab-'+name).classList.add('on');
   var sbi=document.getElementById('sbi-'+name); if(sbi) sbi.classList.add('on');
   var pt=document.getElementById('page-bar-title'); if(pt) pt.textContent=titles[name]||name;
   if(name==='ewidencja') renderEw();
+  if(name==='myteam') buildMyTeam();
   if(name==='dashboard') buildDashboard();
   if(name==='raporty') buildRaporty();
   if(name==='admin') buildAdmin();
@@ -21,7 +23,7 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 
-function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!entryIsArchived(e)).length;}
+function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=scopedRegistry().filter(e=>!entryIsArchived(e)).length;}
 
 // ══════════════════════════════════════════════
 // ROLE BADGE (page-bar switcher)
@@ -35,6 +37,9 @@ function updateRoleBadge(){
   if(sw) sw.setAttribute('data-role',r);
   var icons={admin:'⚙️',leader:'👑',assessor:'✅',viewer:'👁️'};
   if(icon) icon.textContent=icons[r]||'⚙️';
+  document.querySelectorAll('.leader-only').forEach(function(el){
+    el.style.display=activeLeaderScope()?'flex':'none';
+  });
 }
 
 function confirmReset(){

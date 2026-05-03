@@ -3,6 +3,39 @@ export function authInit(){
   const sessionKey='oc_session_v1';
   const roles={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
 
+  function demoLeaderUsers(){
+    const org=typeof window.buildDemoOrg==='function'?window.buildDemoOrg():{leaders:[]};
+    return (org.leaders||[]).map((leader,i)=>({
+      id:100+i,
+      l:'lider'+String(i+1).padStart(2,'0'),
+      p:'lider123',
+      r:'leader',
+      n:leader,
+      leaderScope:leader
+    }));
+  }
+
+  function mergeUsers(base){
+    const list=Array.isArray(base)?base:[];
+    const byLogin=new Map(list.map(u=>[u.l,u]));
+    demoLeaderUsers().forEach(u=>{
+      byLogin.set(u.l,Object.assign({},byLogin.get(u.l)||{},u));
+    });
+    const firstLeader=demoLeaderUsers()[0];
+    const secondLeader=demoLeaderUsers()[1]||firstLeader;
+    if(firstLeader){
+      byLogin.set('lider',Object.assign({},byLogin.get('lider')||{},{
+        id:2,l:'lider',p:'lider123',r:'leader',n:firstLeader.n,leaderScope:firstLeader.leaderScope
+      }));
+    }
+    if(secondLeader){
+      byLogin.set('oceniajacy',Object.assign({},byLogin.get('oceniajacy')||{},{
+        id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:secondLeader.n,leaderScope:secondLeader.leaderScope
+      }));
+    }
+    return Array.from(byLogin.values()).sort((a,b)=>(a.id||9999)-(b.id||9999));
+  }
+
   function users(){
     let u=JSON.parse(DataStore.getValue(usersKey,'null')||'null');
     if(!u){
@@ -12,8 +45,9 @@ export function authInit(){
         {id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:'Oceniający'},
         {id:4,l:'podglad',p:'podglad123',r:'viewer',n:'Użytkownik podglądu'}
       ];
-      DataStore.setValue(usersKey,JSON.stringify(u));
     }
+    u=mergeUsers(u);
+    DataStore.setValue(usersKey,JSON.stringify(u));
     return u;
   }
 
@@ -77,7 +111,7 @@ export function authInit(){
             <button class="oc-login-btn" type="submit">Wejdź do aplikacji</button>
             <div class="oc-error" id="oc-login-error">Nieprawidłowy login lub hasło.</div>
           </form>
-          <div class="oc-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>lider / lider123<br>oceniajacy / ocena123<br>podglad / podglad123</div>
+          <div class="oc-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>lider01 / lider123 (Alicja Wrona)<br>lider02 / lider123 (Mateusz Cieślak)<br>lider / lider123 (alias lider01)<br>podglad / podglad123</div>
         </section>
       </div>`;
     document.body.appendChild(d);
@@ -111,6 +145,13 @@ export function authInit(){
   adminData.access.role=u.r;
   saveAdminData();
   updateRoleBadge();
+  if(typeof updateBadge==='function') updateBadge();
+  if(typeof buildForm==='function') ['r','m','s'].forEach(buildForm);
+  if(document.getElementById('tab-ewidencja')?.classList.contains('on') && typeof renderEw==='function') renderEw();
+  if(document.getElementById('tab-myteam')?.classList.contains('on') && typeof buildMyTeam==='function') buildMyTeam();
+  if(document.getElementById('tab-dashboard')?.classList.contains('on') && typeof buildDashboard==='function') buildDashboard();
+  if(document.getElementById('tab-raporty')?.classList.contains('on') && typeof buildRaporty==='function') buildRaporty();
+  if(document.getElementById('tab-admin')?.classList.contains('on') && !can('adminConfig')) switchTab('ewidencja');
 
   injectStyle();
   const bar=document.querySelector('.page-bar');

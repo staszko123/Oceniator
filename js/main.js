@@ -9,6 +9,7 @@
 initTheme();
 loadRegistry();
 loadAdminData();
+installDemoData(false);
 if(registry.length===0){seedTestData();seedAdminFromRegistry();}
 restoreDraftsOnBoot();
 ['r','m','s'].forEach(buildForm);
@@ -67,12 +68,7 @@ updateRoleBadge();
 })();
 
 function enterApp(tab){
-  var start=document.getElementById('start-screen');
-  if(tab){
-    var item=document.getElementById('sbi-'+tab);
-    if(item) switchTab(tab,item);
-  }
-  if(start) start.classList.add('is-hidden');
+  switchTab(tab||'rozmowy');
 }
 
 // ── KEYBOARD SHORTCUTS — Ctrl+S saves all visible form drafts ──

@@ -119,6 +119,9 @@ function periodOf(dateStr){
   }
   return '';
 }
+function currentPeriodValue(){
+  return periodOf(new Date().toISOString().split('T')[0]);
+}
 function ratingLabel(r){return r==='great'?'Bardzo dobry':r==='good'?'Dobry':'Poniżej standardu';}
 function applyCol(el,pct){el.style.color=pct>=92?'var(--green)':pct>=82?'var(--amber)':'var(--red)';}
 function applyBadge(el,pct){
@@ -168,6 +171,34 @@ function can(action){
   return perms.indexOf(action)>-1;
 }
 function roleLabel(){return {admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'}[activeRole()]||'Administrator';}
+function currentUser(){
+  try{
+    var session=JSON.parse(DataStore.getValue('oc_session_v1','null')||'null');
+    if(!session) return null;
+    var users=JSON.parse(DataStore.getValue('oc_users_v1','[]')||'[]');
+    return users.find(function(u){return u.id===session.id;})||null;
+  }catch(e){return null;}
+}
+function activeLeaderScope(){
+  var role=activeRole();
+  if(role!=='leader'&&role!=='assessor') return '';
+  var user=currentUser()||{};
+  var scope=user.leaderScope||'';
+  if(scope) return scope;
+  var name=user.n||'';
+  return getActiveAdminItems('assessors').indexOf(name)>-1?name:'';
+}
+function entryInScope(e){
+  var leader=activeLeaderScope();
+  return !leader || (e&&e.oce===leader);
+}
+function personInScope(p){
+  var leader=activeLeaderScope();
+  return !leader || (p&&p.leader===leader);
+}
+function scopedRegistry(){
+  return registry.filter(entryInScope);
+}
 function logChange(type,desc){
   normalizeAdminData();
   adminData.history.unshift({id:Date.now(),ts:new Date().toISOString(),role:activeRole(),type,desc});
@@ -181,7 +212,7 @@ function getActiveAdminItems(key){
 }
 function activePeople(){
   normalizeAdminData();
-  return adminData.people.filter(p=>p&&p.active!==false&&p.name);
+  return adminData.people.filter(p=>p&&p.active!==false&&p.name&&personInScope(p));
 }
 function getPersonByName(name){
   return activePeople().find(p=>p.name===name)||null;
@@ -208,8 +239,8 @@ function specPeriodStatsHtml(spec,period){
     return '<div class="spec-empty">Wybierz specjalistę, aby zobaczyć jego wynik, realizację celu i ostatnie oceny w aktualnym periodzie.</div>';
   }
   var person=getPersonByName(spec)||{};
-  var rows=registry.filter(function(e){return !entryIsArchived(e)&&e.spec===spec&&(!period||e.period===period);});
-  var allRows=registry.filter(function(e){return !entryIsArchived(e)&&e.spec===spec;});
+  var rows=scopedRegistry().filter(function(e){return !entryIsArchived(e)&&e.spec===spec&&(!period||e.period===period);});
+  var allRows=scopedRegistry().filter(function(e){return !entryIsArchived(e)&&e.spec===spec;});
   var cards=rows.length, avg=cards?Math.round(rows.reduce(function(a,b){return a+b.avgFinal;},0)/cards):0;
   var goalRows=['r','m','s'].map(function(type){
     var done=rows.filter(function(e){return e.p===type;}).reduce(function(a,b){return a+(b.contactCount||0);},0);

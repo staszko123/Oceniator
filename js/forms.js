@@ -231,6 +231,10 @@ function validateForm(p){
   const data=document.getElementById(`${p}-data`)?.value?.trim();
   const oce=document.getElementById(`${p}-oce`)?.value?.trim();
   if(!spec){errors.push('Brak imienia i nazwiska specjalisty');document.getElementById(`${p}-spec`)?.classList.add('invalid');}
+  if(spec && !getPersonByName(spec) && activeLeaderScope()){
+    errors.push('Wybrany specjalista nie należy do Twojego zespołu');
+    document.getElementById(`${p}-spec`)?.classList.add('invalid');
+  }
   if(!data){errors.push('Brak daty oceny');document.getElementById(`${p}-data`)?.classList.add('invalid');}
   if(!oce){errors.push('Brak nazwiska oceniającego');}
   // check any ID filled
@@ -527,7 +531,7 @@ function saveOce(val){if(val)DataStore.setSavedAssessor(val);}
 function onSpecChange(p){
   var spec = document.getElementById(p+'-spec')?.value||'';
   var person = spec ? getPersonByName(spec) : null;
-  var last = spec ? registry.slice().reverse().find(function(e){return e.spec===spec;}) : null;
+  var last = spec ? scopedRegistry().slice().reverse().find(function(e){return e.spec===spec;}) : null;
   var stand = (person&&person.position)||last?.stand||'';
   var dzial = (person&&person.department)||last?.dzial||'';
   var oce   = (person&&person.leader)||last?.oce||DataStore.getSavedAssessor()||'';

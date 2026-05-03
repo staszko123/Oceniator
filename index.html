@@ -12,54 +12,6 @@
 
 <div id="toast"></div>
 
-<!-- START SCREEN -->
-<section class="start-screen" id="start-screen" aria-label="Ekran startowy">
-  <div class="start-inner">
-    <div class="start-copy">
-      <div class="start-kicker">System Oceny Jakości</div>
-      <h1 class="start-title">Oceniator dla kontroli jakości PeP i P24</h1>
-      <p class="start-lead">Rozpocznij ocenę rozmów, maili lub działań w systemach, a później przejdź do ewidencji, dashboardu i raportów bez przełączania narzędzi.</p>
-      <div class="start-actions">
-        <button class="start-primary" onclick="enterApp()">Rozpocznij pracę</button>
-        <button class="start-secondary" id="continue-draft-btn" onclick="continueDraft()" style="display:none">Kontynuuj szkic</button>
-        <button class="start-secondary" onclick="enterApp('dashboard')">Zobacz dashboard</button>
-      </div>
-    </div>
-    <div class="start-panel" aria-label="Skróty startowe">
-      <div class="start-panel-head">
-        <div class="start-panel-title">Wybierz obszar pracy</div>
-        <div class="start-panel-pill">Start</div>
-      </div>
-      <div class="start-tiles">
-        <button class="start-tile" onclick="enterApp('rozmowy')">
-          <span class="start-tile-icon">📞</span>
-          <span class="start-tile-name">Ocena rozmów</span>
-          <span class="start-tile-desc">Karta jakości dla kontaktów telefonicznych.</span>
-        </button>
-        <button class="start-tile" onclick="enterApp('maile')">
-          <span class="start-tile-icon">✉️</span>
-          <span class="start-tile-name">Ocena maili</span>
-          <span class="start-tile-desc">Weryfikacja odpowiedzi pisemnych i kompletności spraw.</span>
-        </button>
-        <button class="start-tile" onclick="enterApp('systemy')">
-          <span class="start-tile-icon">🖥️</span>
-          <span class="start-tile-name">Działania w Systemach</span>
-          <span class="start-tile-desc">Ocena poprawności działań operacyjnych.</span>
-        </button>
-        <button class="start-tile" onclick="enterApp('ewidencja')">
-          <span class="start-tile-icon">📋</span>
-          <span class="start-tile-name">Ewidencja</span>
-          <span class="start-tile-desc">Przegląd zapisanych kart, filtrów i eksportów.</span>
-        </button>
-      </div>
-      <div class="start-footer">
-        <span>Dane zostają lokalnie w przeglądarce.</span>
-        <span>Możesz wrócić do ekranu startowego po odświeżeniu.</span>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- SHAREPOINT MODAL -->
 <div class="modal-overlay" id="sp-modal">
   <div class="modal">
@@ -130,11 +82,13 @@
       <div class="sb-brand"><div class="sb-title">Ocena Jakości</div><div class="sb-sub">PeP &amp; P24</div></div>
     </div>
     <div class="sb-nav">
+      <div class="sb-item on" id="sbi-start" onclick="switchTab('start',this)"><span class="sb-icon">🏠</span><span class="sb-label">Start</span><span class="sb-tip">Start</span></div>
       <div class="sb-sec-lbl">Formularze</div>
-      <div class="sb-item on" id="sbi-rozmowy" onclick="switchTab('rozmowy',this)"><span class="sb-icon">📞</span><span class="sb-label">Ocena Rozmów</span><span class="sb-tip">Ocena Rozmów</span></div>
+      <div class="sb-item" id="sbi-rozmowy" onclick="switchTab('rozmowy',this)"><span class="sb-icon">📞</span><span class="sb-label">Ocena Rozmów</span><span class="sb-tip">Ocena Rozmów</span></div>
       <div class="sb-item" id="sbi-maile" onclick="switchTab('maile',this)"><span class="sb-icon">✉️</span><span class="sb-label">Ocena Maili</span><span class="sb-tip">Ocena Maili</span></div>
       <div class="sb-item" id="sbi-systemy" onclick="switchTab('systemy',this)"><span class="sb-icon">🖥</span><span class="sb-label">Działania w Systemach</span><span class="sb-tip">Działania w Systemach</span></div>
       <div class="sb-sec-lbl">Analityka</div>
+      <div class="sb-item leader-only" id="sbi-myteam" onclick="switchTab('myteam',this)" style="display:none"><span class="sb-icon">👥</span><span class="sb-label">Mój Zespół</span><span class="sb-tip">Mój Zespół</span></div>
       <div class="sb-item" id="sbi-dashboard" onclick="switchTab('dashboard',this)"><span class="sb-icon">📈</span><span class="sb-label">Dashboard</span><span class="sb-tip">Dashboard</span></div>
       <div class="sb-item" id="sbi-ewidencja" onclick="switchTab('ewidencja',this)"><span class="sb-icon">📋</span><span class="sb-label">Ewidencja</span><span class="sb-badge" id="ew-badge">0</span><span class="sb-tip">Ewidencja kart</span></div>
       <div class="sb-item" id="sbi-raporty" onclick="switchTab('raporty',this)"><span class="sb-icon">📊</span><span class="sb-label">Raporty</span><span class="sb-tip">Generowanie raportów CSV</span></div>
@@ -150,7 +104,7 @@
   </nav>
   <div class="main-wrap">
     <div class="page-bar">
-      <div class="page-bar-title" id="page-bar-title">Ocena Rozmów</div>
+      <div class="page-bar-title" id="page-bar-title">Start</div>
       <div class="role-switcher" id="role-switcher" data-role="admin">
         <span class="role-sw-icon" id="role-sw-icon">⚙️</span>
         <select class="role-sw-sel" id="role-sw-sel" onchange="admSetRole(this.value)">
@@ -163,9 +117,58 @@
       </div>
     </div>
     <main class="main">
-      <div id="tab-rozmowy"   class="panel on"><div class="wrap" id="wrap-r"></div></div>
+      <div id="tab-start"     class="panel on">
+        <section class="start-screen" id="start-screen" aria-label="Ekran startowy">
+          <div class="start-inner">
+            <div class="start-copy">
+              <div class="start-kicker">System Oceny Jakości</div>
+              <h1 class="start-title">Oceniator dla kontroli jakości PeP i P24</h1>
+              <p class="start-lead">Rozpocznij ocenę rozmów, maili lub działań w systemach, a później przejdź do ewidencji, dashboardu i raportów bez przełączania narzędzi.</p>
+              <div class="start-actions">
+                <button class="start-primary" onclick="enterApp('rozmowy')">Rozpocznij pracę</button>
+                <button class="start-secondary" id="continue-draft-btn" onclick="continueDraft()" style="display:none">Kontynuuj szkic</button>
+                <button class="start-secondary" onclick="enterApp('dashboard')">Zobacz dashboard</button>
+              </div>
+            </div>
+            <div class="start-panel" aria-label="Skróty startowe">
+              <div class="start-panel-head">
+                <div class="start-panel-title">Wybierz obszar pracy</div>
+                <div class="start-panel-pill">Start</div>
+              </div>
+              <div class="start-tiles">
+                <button class="start-tile" onclick="enterApp('rozmowy')">
+                  <span class="start-tile-icon">📞</span>
+                  <span class="start-tile-name">Ocena rozmów</span>
+                  <span class="start-tile-desc">Karta jakości dla kontaktów telefonicznych.</span>
+                </button>
+                <button class="start-tile" onclick="enterApp('maile')">
+                  <span class="start-tile-icon">✉️</span>
+                  <span class="start-tile-name">Ocena maili</span>
+                  <span class="start-tile-desc">Weryfikacja odpowiedzi pisemnych i kompletności spraw.</span>
+                </button>
+                <button class="start-tile" onclick="enterApp('systemy')">
+                  <span class="start-tile-icon">🖥️</span>
+                  <span class="start-tile-name">Działania w Systemach</span>
+                  <span class="start-tile-desc">Ocena poprawności działań operacyjnych.</span>
+                </button>
+                <button class="start-tile" onclick="enterApp('ewidencja')">
+                  <span class="start-tile-icon">📋</span>
+                  <span class="start-tile-name">Ewidencja</span>
+                  <span class="start-tile-desc">Przegląd zapisanych kart, filtrów i eksportów.</span>
+                </button>
+              </div>
+              <div class="start-footer">
+                <span>Dane zostają lokalnie w przeglądarce.</span>
+                <span>Do tego ekranu wrócisz z zakładki Start.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div id="tab-rozmowy"   class="panel"><div class="wrap" id="wrap-r"></div></div>
       <div id="tab-maile"     class="panel"><div class="wrap" id="wrap-m"></div></div>
       <div id="tab-systemy"   class="panel"><div class="wrap" id="wrap-s"></div></div>
+      <div id="tab-myteam"    class="panel"><div class="wrap" id="wrap-myteam"></div></div>
       <div id="tab-dashboard" class="panel"><div class="wrap" id="wrap-dash"></div></div>
       <div id="tab-ewidencja" class="panel"><div class="wrap" id="wrap-ew"></div></div>
       <div id="tab-raporty"   class="panel"><div class="wrap" id="wrap-raporty"></div></div>
@@ -185,6 +188,7 @@
 <script src="js/forms.js"></script>
 <script src="js/ewidencja.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/my-team.js"></script>
 <script src="js/raporty.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/seed.js"></script>
