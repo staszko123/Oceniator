@@ -840,6 +840,29 @@ html,body{
 }
 [data-theme="dark"] .page-bar{background:rgba(20,27,45,.78);border-bottom-color:rgba(52,66,94,.75)}
 .page-bar-title{font-size:16px;font-weight:700;color:var(--text);letter-spacing:0}
+
+/* ── ROLE SWITCHER ── */
+.role-switcher{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  padding:5px 10px 5px 8px;border-radius:20px;cursor:pointer;
+  border:1.5px solid var(--rs-color,#6366F1);
+  background:color-mix(in srgb,var(--rs-color,#6366F1) 10%,transparent);
+  transition:background .2s,border-color .2s;
+}
+.role-switcher:hover{background:color-mix(in srgb,var(--rs-color,#6366F1) 18%,transparent)}
+.role-switcher[data-role="admin"]{--rs-color:#6366F1}
+.role-switcher[data-role="leader"]{--rs-color:#F59E0B}
+.role-switcher[data-role="assessor"]{--rs-color:#10B981}
+.role-switcher[data-role="viewer"]{--rs-color:#64748B}
+.role-sw-icon{font-size:14px;line-height:1;pointer-events:none}
+.role-sw-sel{
+  border:none;background:transparent;font-size:12px;font-weight:600;
+  color:var(--rs-color,#6366F1);cursor:pointer;outline:none;
+  padding:0;-webkit-appearance:none;appearance:none;
+}
+.role-sw-arrow{font-size:10px;color:var(--rs-color,#6366F1);pointer-events:none;line-height:1}
+[data-theme="dark"] .role-sw-sel option{background:#1e293b;color:#f1f5f9}
+
 .sidebar{
   width:236px;background:linear-gradient(180deg,#111827 0%,#172033 58%,#101828 100%);
   border-right:1px solid rgba(255,255,255,.08);box-shadow:12px 0 32px rgba(16,24,40,.13)

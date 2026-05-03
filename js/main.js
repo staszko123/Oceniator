@@ -18,6 +18,7 @@ const bootDrafts=getDrafts();
 ['r','m','s'].forEach(p=>{const d=document.getElementById(`${p}-data`);if(d&&!formHasContent(bootDrafts[p])) d.value=today;recalc(p);refreshSpecContext(p);});
 draftDirty=Object.values(bootDrafts).some(formHasContent);
 updateDraftStartButton();
+updateRoleBadge();
 
 function enterApp(tab){
   var start=document.getElementById('start-screen');

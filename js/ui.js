@@ -23,6 +23,20 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!e.archived).length;}
 
+// ══════════════════════════════════════════════
+// ROLE BADGE (page-bar switcher)
+// ══════════════════════════════════════════════
+function updateRoleBadge(){
+  var r=activeRole();
+  var sw=document.getElementById('role-switcher');
+  var sel=document.getElementById('role-sw-sel');
+  var icon=document.getElementById('role-sw-icon');
+  if(sel) sel.value=r;
+  if(sw) sw.setAttribute('data-role',r);
+  var icons={admin:'⚙️',leader:'👑',assessor:'✅',viewer:'👁️'};
+  if(icon) icon.textContent=icons[r]||'⚙️';
+}
+
 function confirmReset(){
   if(!confirm('Wyczyścić wszystkie dane w formularzu? Ewidencja zostanie zachowana.')) return;
   setDrafts({});draftDirty=false;

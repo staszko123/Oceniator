@@ -151,6 +151,16 @@
   <div class="main-wrap">
     <div class="page-bar">
       <div class="page-bar-title" id="page-bar-title">Ocena Rozmów</div>
+      <div class="role-switcher" id="role-switcher" data-role="admin">
+        <span class="role-sw-icon" id="role-sw-icon">⚙️</span>
+        <select class="role-sw-sel" id="role-sw-sel" onchange="admSetRole(this.value)">
+          <option value="admin">Administrator</option>
+          <option value="leader">Lider</option>
+          <option value="assessor">Oceniający</option>
+          <option value="viewer">Podgląd</option>
+        </select>
+        <span class="role-sw-arrow">▾</span>
+      </div>
     </div>
     <main class="main">
       <div id="tab-rozmowy"   class="panel on"><div class="wrap" id="wrap-r"></div></div>

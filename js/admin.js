@@ -340,6 +340,7 @@ function admSetRole(role){
   normalizeAdminData();
   adminData.access.role=role;
   saveAdminData();logChange('Dostęp','Zmieniono tryb na: '+roleLabel());
+  updateRoleBadge();
   buildAdmin();renderEw();['r','m','s'].forEach(buildForm);showToast('Tryb: '+roleLabel(),'ok');
 }
 function admSaveGoals(){
