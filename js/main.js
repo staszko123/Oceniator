@@ -36,6 +36,13 @@ updateRoleBadge();
     link2.href='css/score-sidebar.css';
     document.head.appendChild(link2);
   }
+  if(!document.getElementById('hybrid-css')){
+    var link3=document.createElement('link');
+    link3.id='hybrid-css';
+    link3.rel='stylesheet';
+    link3.href='css/hybrid-mode.css';
+    document.head.appendChild(link3);
+  }
 })();
 
 function enterApp(tab){
@@ -71,4 +78,11 @@ import('./auth-module.js').then(function(mod){
   if(mod && mod.authInit) mod.authInit();
 }).catch(function(err){
   console.error('Błąd modułu logowania', err);
+});
+
+// ── HYBRID MODE ──
+import('./hybrid-mode.js').then(function(mod){
+  if(mod && mod.initHybrid) mod.initHybrid();
+}).catch(function(err){
+  console.error('Błąd hybrid mode', err);
 });
