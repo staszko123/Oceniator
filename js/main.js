@@ -47,3 +47,10 @@ setInterval(function(){
     if(panel&&panel.classList.contains('on')) saveDraft(p);
   });
 },30000);
+
+// ── LOGIN MODULE ──
+import('./auth-module.js').then(function(mod){
+  if(mod && mod.authInit) mod.authInit();
+}).catch(function(err){
+  console.error('Błąd modułu logowania', err);
+});
