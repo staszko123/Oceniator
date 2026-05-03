@@ -86,3 +86,10 @@ import('./hybrid-mode.js').then(function(mod){
 }).catch(function(err){
   console.error('Błąd hybrid mode', err);
 });
+
+// ── LAYOUT FIX ──
+import('./layout-adjustments.js').then(function(mod){
+  if(mod && mod.initLayoutAdjustments) mod.initLayoutAdjustments();
+}).catch(function(err){
+  console.error('Błąd layout', err);
+});
