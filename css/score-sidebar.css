@@ -61,15 +61,14 @@
   .form-main{
     display:grid;
     grid-template-columns:minmax(0,1fr) 330px;
-    grid-template-areas:
-      "meta side"
-      "content side";
+    grid-template-rows:auto auto 1fr;
     gap:14px 18px;
     align-items:start;
   }
 
   .form-main>.card:first-child{
-    grid-area:meta;
+    grid-column:1;
+    grid-row:1;
   }
 
   .form-main>.sec,
@@ -77,16 +76,13 @@
     grid-column:1;
   }
 
-  .form-main>.act-bar,
-  .form-main>.res-panel{
-    grid-column:2;
-    width:100%;
-  }
-
   .form-main>.act-bar{
+    grid-column:2;
+    grid-row:1;
     position:sticky;
     top:72px;
     z-index:32;
+    width:100%;
     margin-bottom:10px;
     flex-direction:column;
     align-items:stretch;
@@ -107,11 +103,14 @@
   }
 
   .form-main>.res-panel{
+    grid-column:2;
+    grid-row:2 / span 30;
     position:sticky;
-    top:228px;
+    top:230px;
     bottom:auto;
     z-index:31;
-    max-height:calc(100vh - 248px);
+    width:100%;
+    max-height:calc(100vh - 250px);
     overflow:auto;
     margin-bottom:0;
   }
