@@ -22,12 +22,20 @@ updateRoleBadge();
 
 // ── UI OVERRIDES — safe visual layer loaded after base CSS ──
 (function(){
-  if(document.getElementById('theme-overrides-css')) return;
-  var link=document.createElement('link');
-  link.id='theme-overrides-css';
-  link.rel='stylesheet';
-  link.href='css/theme-overrides.css';
-  document.head.appendChild(link);
+  if(!document.getElementById('theme-overrides-css')){
+    var link=document.createElement('link');
+    link.id='theme-overrides-css';
+    link.rel='stylesheet';
+    link.href='css/theme-overrides.css';
+    document.head.appendChild(link);
+  }
+  if(!document.getElementById('score-sidebar-css')){
+    var link2=document.createElement('link');
+    link2.id='score-sidebar-css';
+    link2.rel='stylesheet';
+    link2.href='css/score-sidebar.css';
+    document.head.appendChild(link2);
+  }
 })();
 
 function enterApp(tab){
