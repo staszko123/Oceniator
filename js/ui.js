@@ -22,7 +22,6 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 
 function updateBadge(){var b=document.getElementById('ew-badge');if(b)b.textContent=registry.filter(e=>!e.archived).length;}
-function clearReg(){
 
 function confirmReset(){
   if(!confirm('Wyczyścić wszystkie dane w formularzu? Ewidencja zostanie zachowana.')) return;

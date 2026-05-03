@@ -19,14 +19,6 @@ const bootDrafts=getDrafts();
 draftDirty=Object.values(bootDrafts).some(formHasContent);
 updateDraftStartButton();
 
-(function(){
-  if(localStorage.getItem('pep_sb_collapsed')==='1'){
-    var sb=document.getElementById('sidebar');
-    var ch=document.getElementById('sb-chev');
-    if(sb){sb.classList.add('collapsed');if(ch)ch.textContent='▶';}
-  }
-})();
-
 function enterApp(tab){
   var start=document.getElementById('start-screen');
   if(tab){
