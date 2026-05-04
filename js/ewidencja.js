@@ -110,12 +110,11 @@ function renderEwTable(rows){
       <td><span class="ebadge ${bc}">${ratingLabel(e.rating)}</span></td>
       <td><span class="lock-badge status-badge ${statusCls}" onclick="${statusAction}(${e.id})">${status}</span></td>
       <td class="row-actions-cell">
+        <button class="row-action-btn" onclick="editScores(${e.id})" ${(locked||!can('editOwn'))?'disabled':''}>Edytuj</button>
         <button class="ecopy row-more-btn" onclick="toggleRowActions(${e.id},event)">Więcej</button>
         <div class="row-actions-menu" id="row-actions-${e.id}">
           <button onclick="copyRow(${e.id})">Kopiuj</button>
           <button onclick="previewEntry(${e.id})">Podgląd</button>
-          <button onclick="editEntry(${e.id})" ${(locked||!can('editOwn'))?'disabled':''}>Edytuj notatki</button>
-          <button onclick="editScores(${e.id})" ${(locked||!can('editOwn'))?'disabled':''}>Edytuj oceny</button>
           ${archived?`<button onclick="restoreEntry(${e.id})">Przywróć</button>`:`<button onclick="archiveEntry(${e.id})" ${(!can('archive'))?'disabled':''}>Archiwizuj</button>`}
           <button class="danger" onclick="deleteEntry(${e.id})" ${(!can('hardDelete')||entryStatus(e)==='approved')?'disabled':''}>Usuń trwale</button>
         </div>

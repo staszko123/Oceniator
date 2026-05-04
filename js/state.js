@@ -137,8 +137,12 @@ function applyBadge(el,pct){
 function normalizeAdminData(){
   ['assessors','specialists','departments','positions'].forEach(k=>{if(!Array.isArray(adminData[k])) adminData[k]=[];});
   if(!Array.isArray(adminData.people)) adminData.people=[];
+  if(!adminData.ids||typeof adminData.ids!=='object') adminData.ids={};
+  ['assessors','specialists','departments','positions'].forEach(k=>{if(!adminData.ids[k]||typeof adminData.ids[k]!=='object') adminData.ids[k]={};});
   if(!adminData.archived) adminData.archived={};
   ['assessors','specialists','departments','positions'].forEach(k=>{if(!Array.isArray(adminData.archived[k])) adminData.archived[k]=[];});
+  if(!adminData.aliases||typeof adminData.aliases!=='object') adminData.aliases={};
+  ['assessors','specialists','departments','positions'].forEach(k=>{if(!adminData.aliases[k]||typeof adminData.aliases[k]!=='object') adminData.aliases[k]={};});
   if(!Array.isArray(adminData.history)) adminData.history=[];
   if(!Array.isArray(adminData.periods)||!adminData.periods.length){
     adminData.periods=[{code:'P1',name:'P1',from:'01-01',to:'04-30'},{code:'P2',name:'P2',from:'05-01',to:'08-31'},{code:'P3',name:'P3',from:'09-01',to:'12-31'}];
@@ -146,14 +150,91 @@ function normalizeAdminData(){
   adminData.goals=Object.assign({callsPerPeriod:9,mailsPerPeriod:9,systemsPerPeriod:9,minAvg:92,greatShare:60},adminData.goals||{});
   if(adminData.goals.mailsPerPeriod==null)    adminData.goals.mailsPerPeriod=adminData.goals.callsPerPeriod||9;
   if(adminData.goals.systemsPerPeriod==null)  adminData.goals.systemsPerPeriod=adminData.goals.callsPerPeriod||9;
+  if(!adminData.rolePerms || typeof adminData.rolePerms !== 'object'){
+    adminData.rolePerms = JSON.parse(JSON.stringify(ROLE_PERMS));
+  }else{
+    Object.keys(ROLE_PERMS).forEach(function(role){
+      if(!Array.isArray(adminData.rolePerms[role])){
+        adminData.rolePerms[role] = JSON.parse(JSON.stringify(ROLE_PERMS[role]));
+      } else {
+        adminData.rolePerms[role] = Array.from(new Set(adminData.rolePerms[role].filter(Boolean)));
+      }
+    });
+  }
   adminData.access=Object.assign({role:'admin'},adminData.access||{});
+  ensureStableRelations();
+}
+function stableId(prefix,value){
+  var text=String(value||'').trim()||prefix;
+  var hash=0;
+  for(var i=0;i<text.length;i++) hash=((hash<<5)-hash)+text.charCodeAt(i)|0;
+  return prefix+'_'+Math.abs(hash).toString(36);
+}
+function idForAdminItem(key,name){
+  if(!name) return '';
+  if(!adminData.ids) adminData.ids={};
+  if(!adminData.ids[key]) adminData.ids[key]={};
+  if(!adminData.ids[key][name]) adminData.ids[key][name]=stableId(key.slice(0,3),name);
+  return adminData.ids[key][name];
+}
+function nameForAdminId(key,id){
+  if(!id||!adminData.ids||!adminData.ids[key]) return '';
+  var map=adminData.ids[key];
+  return Object.keys(map).find(function(name){return map[name]===id;})||'';
+}
+function adminKeyForField(field){
+  return {spec:'specialists',oce:'assessors',dzial:'departments',stand:'positions'}[field]||'';
+}
+function personById(id){
+  return adminData.people.find(function(p){return String(p.id)===String(id);})||null;
+}
+function findPersonByAnyName(name){
+  return adminData.people.find(function(p){return p&&p.name===name;})||null;
+}
+function ensureStableRelations(){
+  ['assessors','specialists','departments','positions'].forEach(function(key){
+    (adminData[key]||[]).forEach(function(name){idForAdminItem(key,name);});
+  });
+  adminData.people.forEach(function(p){
+    if(!p.id) p.id=Date.now()+Math.floor(Math.random()*1000000);
+    if(p.name){
+      p.specId=String(p.id);
+      adminData.ids.specialists[p.name]=String(p.id);
+    }
+    if(p.leader) p.leaderId=idForAdminItem('assessors',p.leader);
+    if(p.department) p.departmentId=idForAdminItem('departments',p.department);
+    if(p.position) p.positionId=idForAdminItem('positions',p.position);
+  });
+  if(Array.isArray(window.registry)){
+    registry.forEach(function(e){
+      var p=e.specId?personById(e.specId):findPersonByAnyName(e.spec);
+      if(p){
+        e.specId=String(p.id);
+        if(!e.spec) e.spec=p.name;
+        if(!e.oce) e.oce=p.leader||'';
+        if(!e.dzial) e.dzial=p.department||'';
+        if(!e.stand) e.stand=p.position||'';
+      }
+      if(e.spec&&!e.specId){
+        e.specId=idForAdminItem('specialists',e.spec);
+      }
+      if(e.oce) e.leaderId=idForAdminItem('assessors',e.oce);
+      if(e.dzial) e.departmentId=idForAdminItem('departments',e.dzial);
+      if(e.stand) e.positionId=idForAdminItem('positions',e.stand);
+    });
+  }
 }
 var ROLE_PERMS={
   admin:['create','preview','copy','editOwn','archive','hardDelete','adminConfig','dashboard','reports','export','pdf'],
+  director:['create','preview','copy','editOwn','archive','dashboard','reports','export','pdf'],
   leader:['create','preview','copy','editOwn','archive','dashboard','reports','export','pdf'],
   assessor:['create','preview','copy','editOwn','dashboard','reports','pdf'],
   viewer:['preview','copy','dashboard','reports']
 };
+function getRolePerms(role){
+  normalizeAdminData();
+  return (adminData.rolePerms && adminData.rolePerms[role])?adminData.rolePerms[role]:(ROLE_PERMS[role]||ROLE_PERMS.viewer);
+}
 var PERM_LABELS=[
   ['create','Dodawanie kart'],
   ['editOwn','Edycja ocen/notatek'],
@@ -167,10 +248,10 @@ var PERM_LABELS=[
 ];
 function activeRole(){normalizeAdminData();return adminData.access.role||'admin';}
 function can(action){
-  var perms=ROLE_PERMS[activeRole()]||ROLE_PERMS.viewer;
+  var perms=getRolePerms(activeRole());
   return perms.indexOf(action)>-1;
 }
-function roleLabel(){return {admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'}[activeRole()]||'Administrator';}
+function roleLabel(){return {admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'}[activeRole()]||'Administrator';}
 function currentUser(){
   try{
     var session=JSON.parse(DataStore.getValue('oc_session_v1','null')||'null');
@@ -179,22 +260,69 @@ function currentUser(){
     return users.find(function(u){return u.id===session.id;})||null;
   }catch(e){return null;}
 }
-function activeLeaderScope(){
+function getAssessorAliases(){
+  normalizeAdminData();
+  var aliases=Object.assign({},(adminData.aliases&&adminData.aliases.assessors)||{});
+  (adminData.history||[]).slice().reverse().forEach(function(item){
+    var desc=(item&&item.desc)||'';
+    var match=desc.match(/^Zmieniono wpis: (.+?)\s+→\s+(.+)$/);
+    if(match&&!aliases[match[1]]) aliases[match[1]]=match[2];
+  });
+  return aliases;
+}
+function resolveAssessorAlias(name){
+  var aliases=getAssessorAliases();
+  var seen={};
+  name=name||'';
+  while(name&&aliases[name]&&aliases[name]!==name&&!seen[name]){
+    seen[name]=true;
+    name=aliases[name];
+  }
+  return name||'';
+}
+function demoLeaderForLogin(login){
+  var idx=-1;
+  var match=String(login||'').match(/^lider(\d+)$/);
+  if(match) idx=parseInt(match[1],10)-1;
+  if(login==='lider') idx=0;
+  if(idx<0||typeof buildDemoOrg!=='function') return '';
+  var leader=((buildDemoOrg().leaders||[])[idx])||'';
+  leader=resolveAssessorAlias(leader);
+  return getActiveAdminItems('assessors').indexOf(leader)>-1?leader:'';
+}
+function activeLeaderId(){
   var role=activeRole();
   if(role!=='leader'&&role!=='assessor') return '';
-  var user=currentUser()||{};
-  var scope=user.leaderScope||'';
-  if(scope) return scope;
-  var name=user.n||'';
-  return getActiveAdminItems('assessors').indexOf(name)>-1?name:'';
+  var user=window.currentUserData||currentUser()||{};
+  if(user.leaderId) return String(user.leaderId);
+  var scope=resolveAssessorAlias(user.leaderScope||'');
+  if(scope) return idForAdminItem('assessors',scope);
+  var name=resolveAssessorAlias(user.n||user.name||user.fullName||'');
+  if(getActiveAdminItems('assessors').indexOf(name)>-1) return idForAdminItem('assessors',name);
+  var byLogin=demoLeaderForLogin(user.l||user.login||'');
+  return byLogin?idForAdminItem('assessors',byLogin):'';
+}
+function activeLeaderScope(){
+  return nameForAdminId('assessors',activeLeaderId());
+}
+function entryLeaderId(e){
+  if(!e) return '';
+  if(e.leaderId) return String(e.leaderId);
+  if(e.specId){
+    var p=personById(e.specId);
+    if(p&&p.leaderId) return String(p.leaderId);
+  }
+  return e.oce?idForAdminItem('assessors',resolveAssessorAlias(e.oce)):'';
 }
 function entryInScope(e){
-  var leader=activeLeaderScope();
-  return !leader || (e&&e.oce===leader);
+  var leaderId=activeLeaderId();
+  return !leaderId || entryLeaderId(e)===leaderId;
 }
 function personInScope(p){
-  var leader=activeLeaderScope();
-  return !leader || (p&&p.leader===leader);
+  var leaderId=activeLeaderId();
+  if(!leaderId) return true;
+  if(!p) return false;
+  return String(p.leaderId||idForAdminItem('assessors',p.leader||''))===leaderId;
 }
 function scopedRegistry(){
   return registry.filter(entryInScope);
@@ -219,9 +347,13 @@ function getPersonByName(name){
 }
 function getSpecialistOptions(){
   var names=activePeople().map(p=>p.name);
+  scopedRegistry().forEach(function(e){
+    if(e.spec&&names.indexOf(e.spec)===-1) names.push(e.spec);
+  });
   getActiveAdminItems('specialists').forEach(function(n){
-    var hasRecord=adminData.people.some(function(p){return p.name===n;});
-    if(!hasRecord&&names.indexOf(n)===-1) names.push(n);
+    if(names.indexOf(n)!==-1) return;
+    var person=adminData.people.find(function(p){return p.name===n;});
+    if(!person || personInScope(person)) names.push(n);
   });
   return names.sort();
 }

@@ -46,11 +46,11 @@ export function initEwidencjaPremium(){
         </td>
 
         <td class="row-actions-cell">
+          <button class="row-action-btn" onclick="editScores(${e.id})">Edytuj</button>
           <button class="row-more-btn" onclick="toggleRowActions(${e.id},event)">Więcej</button>
           <div class="row-actions-menu" id="row-actions-${e.id}">
             <button onclick="copyRow(${e.id})"><span class="ram-icon">📋</span>Kopiuj</button>
             <button onclick="previewEntry(${e.id})"><span class="ram-icon">👁</span>Podgląd</button>
-            <button class="ram-sep" onclick="editEntry(${e.id})"><span class="ram-icon">✏️</span>Edytuj</button>
             <button onclick="archiveEntry(${e.id})"><span class="ram-icon">📦</span>Archiwizuj</button>
             <button class="danger" onclick="deleteEntry(${e.id})"><span class="ram-icon">🗑</span>Usuń</button>
           </div>

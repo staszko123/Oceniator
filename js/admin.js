@@ -57,6 +57,7 @@ function seedAdminFromRegistry(){
   ['assessors','specialists','departments','positions'].forEach(function(k){
     adminData[k].sort();
   });
+  ensureStableRelations();
 }
 function buildAdmin(){
   normalizeAdminData();
@@ -66,7 +67,7 @@ function buildAdmin(){
   var archived=registry.filter(e=>entryIsArchived(e)).length;
   var specs=[].concat(registry.filter(e=>!entryIsArchived(e))).reduce(function(s,e){s.add(e.spec);return s;},new Set()).size;
   var periods=[].concat(registry.filter(e=>!entryIsArchived(e))).reduce(function(s,e){if(e.period)s.add(e.period);return s;},new Set()).size;
-  var roleOpts={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
+  var roleOpts={admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
   var leaders=getActiveAdminItems('assessors'), deps=getActiveAdminItems('departments'), pos=getActiveAdminItems('positions');
   var h='';
   h+='<div style="margin-bottom:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">';
@@ -80,13 +81,19 @@ function buildAdmin(){
   h+='<div class="adm-stat"><div class="adm-stat-val">'+periods+'</div><div class="adm-stat-lbl">Okresów w danych</div></div>';
   h+='</div>';
 
+  var roleKeys=['admin','director','leader','assessor','viewer'];
+  var roleOpts={admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
   h+='<div class="adm-card" style="margin-bottom:14px"><div class="adm-hdr"><div><div class="adm-title">Uprawnienia per rola</div><div class="adm-item-sub">Akcje są blokowane w formularzach, ewidencji, dashboardzie i raportach zgodnie z aktywnym trybem dostępu.</div></div></div><div class="adm-body">';
-  h+='<div class="perm-grid"><div class="perm-head">Akcja</div><div class="perm-head">Administrator</div><div class="perm-head">Lider</div><div class="perm-head">Oceniający</div><div class="perm-head">Podgląd</div>';
+  h+='<div class="perm-grid"><div class="perm-head">Akcja</div>'+roleKeys.map(function(role){return '<div class="perm-head">'+roleOpts[role]+'</div>';}).join('');
   PERM_LABELS.forEach(function(row){
     h+='<div>'+row[1]+'</div>';
-    ['admin','leader','assessor','viewer'].forEach(function(role){
-      var ok=(ROLE_PERMS[role]||[]).indexOf(row[0])>-1;
-      h+='<div class="'+(ok?'perm-yes':'perm-no')+'">'+(ok?'✓ Dostęp':'— Blokada')+'</div>';
+    roleKeys.forEach(function(role){
+      var ok=getRolePerms(role).indexOf(row[0])>-1;
+      if(can('adminConfig')){
+        h+='<label class="perm-cell"><input type="checkbox" '+(ok?'checked':'')+' onchange="admToggleRolePerm(\''+role+'\',\''+row[0]+'\')"> '+(ok?'Tak':'Brak')+'</label>';
+      } else {
+        h+='<div class="'+(ok?'perm-yes':'perm-no')+'">'+(ok?'✓ Dostęp':'— Blokada')+'</div>';
+      }
     });
   });
   h+='</div></div></div>';
@@ -156,6 +163,22 @@ function renderAdmLists(){
     var sinp=document.getElementById('adms-'+key);
     var q=(admSearch[key]||'').toLowerCase();
     if(sinp&&sinp.value!==admSearch[key]) sinp.value=admSearch[key]||'';
+    if(key==='specialists'){
+      var people=(activeLeaderScope()?activePeople():adminData.people.filter(function(p){return p&&p.name;}));
+      var filteredPeople=q?people.filter(function(p){return ((p.name||'')+' '+(p.leader||'')+' '+(p.department||'')+' '+(p.position||'')).toLowerCase().indexOf(q)>=0;}):people;
+      if(!people.length){el.innerHTML='<div class="adm-empty">Brak specjalistów.</div>';return;}
+      if(!filteredPeople.length){el.innerHTML='<div class="adm-empty">Brak wyników dla "'+admSearch[key]+'".</div>';return;}
+      el.innerHTML=filteredPeople.map(function(p){
+        var i=adminData.people.indexOf(p);
+        return '<div class="adm-item adm-person-item" id="admi-specialists-'+i+'">'+
+          '<span class="adm-person-avatar">'+escHtml((p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2))+'</span>'+
+          '<div style="flex:1;min-width:0"><div class="adm-item-name">'+escHtml(p.name||'')+'</div>'+
+          '<div class="adm-item-sub">'+escHtml(p.department||'Brak działu')+' · '+escHtml(p.position||'Brak stanowiska')+' · Lider: '+escHtml(p.leader||'brak')+'</div></div>'+
+          '<div class="adm-actions"><button class="adm-btn" onclick="admEditPerson('+i+')" '+(!can('adminConfig')?'disabled':'')+'>Edytuj</button></div>'+
+        '</div>';
+      }).join('')+(q?'<div style="font-size:10px;color:var(--text3);text-align:center;padding:4px 0">'+filteredPeople.length+' z '+people.length+' osób</div>':'');
+      return;
+    }
     var items=(adminData[key]||[]);
     var filtered=q?items.filter(function(it){return it.toLowerCase().indexOf(q)>=0;}):items;
     if(!items.length){
@@ -209,16 +232,25 @@ function admAddPerson(){
   saveAdminData();logChange('Struktura bazy',(old?'Zmieniono przypisanie: ':'Dodano przypisanie: ')+name);
   buildAdmin();['r','m','s'].forEach(buildForm);showToast(old?'Przypisanie zaktualizowane':'Przypisanie dodane','ok');
 }
+function admNewPerson(){
+  if(!can('adminConfig')){showToast('Brak uprawnień','warn');return;}
+  editingPersonIdx=-1;
+  admOpenPersonModal({name:'',leader:'',department:'',position:'',active:true},'Dodaj specjalistę');
+}
 function admEditPerson(i){
   if(!can('adminConfig')){showToast('Brak uprawnień','warn');return;}
   var p=adminData.people[i];if(!p)return;
   editingPersonIdx=i;
+  admOpenPersonModal(p,'Edytuj specjalistę');
+}
+function admOpenPersonModal(p,title){
   var old=document.getElementById('adm-person-modal');if(old) old.remove();
   var div=document.createElement('div');
   div.id='adm-person-modal';
   div.className='modal-overlay open';
   div.innerHTML='<div class="modal adm-person-modal">'+
-    '<h3>Edytuj specjalistę</h3>'+
+    '<h3>'+title+'</h3>'+
+    '<p>Uzupełnij dane osoby i przypisz ją do lidera, działu oraz stanowiska. Ten zapis zasila formularze, raporty i widoki zespołów.</p>'+
     '<div class="adm-modal-grid">'+
       '<label>Specjalista<input id="adm-modal-name" value="'+escHtml(p.name||'')+'"></label>'+
       '<label>Lider / oceniający<select id="adm-modal-leader">'+optsHtml(getActiveAdminItems('assessors'),p.leader||'')+'</select></label>'+
@@ -233,31 +265,46 @@ function admEditPerson(i){
 }
 function admClosePersonModal(){var el=document.getElementById('adm-person-modal');if(el) el.remove();editingPersonIdx=-1;}
 function admSavePersonModal(){
-  if(editingPersonIdx<0||!adminData.people[editingPersonIdx]) return;
-  var old=adminData.people[editingPersonIdx];
+  normalizeAdminData();
+  var old=editingPersonIdx>-1?adminData.people[editingPersonIdx]:null;
   var name=(document.getElementById('adm-modal-name')?.value||'').trim();
   if(!name){showToast('Wpisz specjalistę','err');return;}
+  var leader=document.getElementById('adm-modal-leader')?.value||'';
+  var department=document.getElementById('adm-modal-department')?.value||'';
+  var position=document.getElementById('adm-modal-position')?.value||'';
   var person={
-    id:old.id||Date.now(),
+    id:(old&&old.id)||Date.now(),
     name:name,
-    leader:document.getElementById('adm-modal-leader')?.value||'',
-    department:document.getElementById('adm-modal-department')?.value||'',
-    position:document.getElementById('adm-modal-position')?.value||'',
+    specId:String((old&&old.id)||Date.now()),
+    leader:leader,
+    leaderId:idForAdminItem('assessors',leader),
+    department:department,
+    departmentId:idForAdminItem('departments',department),
+    position:position,
+    positionId:idForAdminItem('positions',position),
     active:(document.getElementById('adm-modal-active')?.value||'1')==='1'
   };
-  adminData.people[editingPersonIdx]=person;
+  person.specId=String(person.id);
+  var duplicate=adminData.people.findIndex(function(p,i){return p.name===name&&i!==editingPersonIdx;});
+  if(duplicate>-1){showToast('Taki specjalista już istnieje','warn');return;}
+  if(old&&old.name!==name&&adminData.ids.specialists) delete adminData.ids.specialists[old.name];
+  adminData.ids.specialists[name]=String(person.id);
+  if(editingPersonIdx>-1) adminData.people[editingPersonIdx]=person; else adminData.people.push(person);
   [['specialists',person.name],['assessors',person.leader],['departments',person.department],['positions',person.position]].forEach(function(pair){
     var k=pair[0],v=pair[1];if(v&&adminData[k].indexOf(v)===-1) adminData[k].push(v);
   });
-  registry.forEach(function(e){
-    if(e.spec===old.name){
-      e.spec=person.name;e.oce=person.leader;e.dzial=person.department;e.stand=person.position;
-    }
-  });
+  if(old){
+    registry.forEach(function(e){
+      if(String(e.specId||'')===String(old.id)||e.spec===old.name){
+        e.specId=String(person.id);e.leaderId=person.leaderId;e.departmentId=person.departmentId;e.positionId=person.positionId;
+        e.spec=person.name;e.oce=person.leader;e.dzial=person.department;e.stand=person.position;
+      }
+    });
+  }
   adminData.people.sort(function(a,b){return (a.name||'').localeCompare(b.name||'','pl');});
   ['assessors','specialists','departments','positions'].forEach(function(k){adminData[k].sort();});
-  saveAdminData();saveRegistry();logChange('Struktura bazy','Zmieniono dane specjalisty: '+person.name);
-  admClosePersonModal();buildAdmin();['r','m','s'].forEach(buildForm);showToast('Dane specjalisty zaktualizowane','ok');
+  saveAdminData();if(old)saveRegistry();logChange('Struktura bazy',(old?'Zmieniono dane specjalisty: ':'Dodano specjalistę: ')+person.name);
+  admClosePersonModal();buildAdmin();['r','m','s'].forEach(buildForm);showToast(old?'Dane specjalisty zaktualizowane':'Specjalista dodany','ok');
 }
 function admTogglePerson(i){
   if(!can('adminConfig')){showToast('Brak uprawnień','warn');return;}
@@ -335,12 +382,53 @@ function admEditBtn(btn){
   }
 }
 function admSaveBtn(btn){admSaveItem(btn.getAttribute('data-k'),parseInt(btn.getAttribute('data-i')));}
+function admUpdateAuthUsersForRename(key,oldName,newName){
+  if(key!=='assessors'&&key!=='specialists') return;
+  try{
+    var raw=DataStore.getValue('oc_users_v1','null');
+    var users=JSON.parse(raw||'null');
+    if(!Array.isArray(users)) return;
+    var changed=false;
+    users.forEach(function(u){
+      if(key==='assessors'){
+        if(u.leaderScope===oldName){u.leaderScope=newName;changed=true;}
+        if(u.n===oldName){u.n=newName;changed=true;}
+        if(u.name===oldName){u.name=newName;changed=true;}
+        if(u.fullName===oldName){u.fullName=newName;changed=true;}
+        if(u.leaderScope===newName||u.n===newName){
+          u.leaderId=idForAdminItem('assessors',newName);
+          changed=true;
+        }
+      }
+      if(key==='specialists'){
+        if(u.n===oldName){u.n=newName;changed=true;}
+        if(u.name===oldName){u.name=newName;changed=true;}
+        if(u.fullName===oldName){u.fullName=newName;changed=true;}
+      }
+    });
+    if(changed) DataStore.setValue('oc_users_v1',JSON.stringify(users));
+    if(window.currentUserData){
+      if(key==='assessors'&&window.currentUserData.leaderScope===oldName) window.currentUserData.leaderScope=newName;
+      if(window.currentUserData.n===oldName) window.currentUserData.n=newName;
+      if(window.currentUserData.name===oldName) window.currentUserData.name=newName;
+      if(window.currentUserData.fullName===oldName) window.currentUserData.fullName=newName;
+    }
+  }catch(e){}
+}
 function admSaveItem(key,idx){
   if(!can('adminConfig')){showToast('Brak uprawnień','warn');return;}
   var inp=document.getElementById('adm-ei-'+key+'-'+idx);
   var nv=inp?inp.value.trim():'';
   if(!nv){showToast('Nazwa nie może być pusta','err');return;}
   var old=(adminData[key]||[])[idx];
+  if(old===nv){buildAdmin();return;}
+  normalizeAdminData();
+  if(adminData[key].indexOf(nv)>-1){showToast('Taki wpis już istnieje','warn');return;}
+  adminData.aliases[key][old]=nv;
+  if(adminData.ids&&adminData.ids[key]){
+    adminData.ids[key][nv]=adminData.ids[key][old]||idForAdminItem(key,old);
+    delete adminData.ids[key][old];
+  }
   adminData[key][idx]=nv;adminData[key].sort();
   var upd=0;
   registry.forEach(function(e){
@@ -350,13 +438,19 @@ function admSaveItem(key,idx){
     if(key==='positions'&&e.stand===old){e.stand=nv;upd++;}
   });
   adminData.people.forEach(function(p){
-    if(key==='assessors'&&p.leader===old)p.leader=nv;
-    if(key==='specialists'&&p.name===old)p.name=nv;
-    if(key==='departments'&&p.department===old)p.department=nv;
-    if(key==='positions'&&p.position===old)p.position=nv;
+    if(key==='assessors'&&p.leader===old){p.leader=nv;p.leaderId=idForAdminItem('assessors',nv);}
+    if(key==='specialists'&&p.name===old){p.name=nv;p.specId=String(p.id);adminData.ids.specialists[nv]=String(p.id);}
+    if(key==='departments'&&p.department===old){p.department=nv;p.departmentId=idForAdminItem('departments',nv);}
+    if(key==='positions'&&p.position===old){p.position=nv;p.positionId=idForAdminItem('positions',nv);}
   });
+  admUpdateAuthUsersForRename(key,old,nv);
   saveAdminData();if(upd)saveRegistry();logChange('Słownik','Zmieniono wpis: '+old+' → '+nv);
-  buildAdmin();['r','m','s'].forEach(buildForm);showToast('Zaktualizowano'+(upd?' ('+upd+' kart)':''),'ok');
+  updateRoleBadge();
+  buildAdmin();renderEw();['r','m','s'].forEach(buildForm);
+  if(document.getElementById('tab-dashboard')?.classList.contains('on')) buildDashboard();
+  if(document.getElementById('tab-raporty')?.classList.contains('on')) buildRaporty();
+  if(document.getElementById('tab-myteam')?.classList.contains('on')) buildMyTeam();
+  showToast('Zaktualizowano wszędzie'+(upd?' ('+upd+' kart)':''),'ok');
 }
 function admChGoal(d){
   normalizeAdminData();
@@ -386,6 +480,89 @@ function admSetRole(role){
   saveAdminData();logChange('Dostęp','Zmieniono tryb na: '+roleLabel());
   updateRoleBadge();
   buildAdmin();renderEw();['r','m','s'].forEach(buildForm);showToast('Tryb: '+roleLabel(),'ok');
+}
+function admToggleRolePerm(role,perm){
+  if(!can('adminConfig')) return;
+  normalizeAdminData();
+  var perms = adminData.rolePerms && Array.isArray(adminData.rolePerms[role]) ? adminData.rolePerms[role] : [];
+  var idx = perms.indexOf(perm);
+  if(idx > -1){
+    perms.splice(idx,1);
+  } else {
+    perms.push(perm);
+  }
+  adminData.rolePerms[role] = perms.sort();
+  var permLabel = (PERM_LABELS.find(function(item){return item[0]===perm;})||[])[1]||perm;
+  var roleNames = {admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
+  saveAdminData();
+  logChange('Uprawnienia','Zmieniono uprawnienie: '+permLabel+' dla roli '+(roleNames[role]||role));
+  buildAdmin();
+  showToast('Uprawnienia zapisane','ok');
+}
+function admUsers(){
+  try{return JSON.parse(DataStore.getValue('oc_users_v1','[]')||'[]')||[];}catch(e){return [];}
+}
+function admSaveUsers(users){
+  DataStore.setValue('oc_users_v1',JSON.stringify(users));
+  if(window.currentUserData){
+    var cur=users.find(function(u){return u.id===window.currentUserData.id;});
+    if(cur){window.currentUserData=cur;adminData.access.role=cur.r;saveAdminData();updateRoleBadge();}
+  }
+}
+function admUsersHtml(roleOpts){
+  var users=admUsers();
+  var leaders=getActiveAdminItems('assessors');
+  var roleSelect=function(id,role){
+    return '<select id="adm-user-role-'+id+'">'+Object.keys(roleOpts).map(function(k){return '<option value="'+k+'" '+(role===k?'selected':'')+'>'+roleOpts[k]+'</option>';}).join('')+'</select>';
+  };
+  var leaderSelect=function(id,leaderId){
+    return '<select id="adm-user-leader-'+id+'"><option value="">Brak przypisania</option>'+leaders.map(function(name){var lid=idForAdminItem('assessors',name);return '<option value="'+escHtml(lid)+'" '+(String(leaderId||'')===String(lid)?'selected':'')+'>'+escHtml(name)+'</option>';}).join('')+'</select>';
+  };
+  var rows=users.map(function(u){
+    return '<tr><td><input id="adm-user-login-'+u.id+'" value="'+escHtml(u.l||'')+'"></td>'+
+      '<td><input id="adm-user-name-'+u.id+'" value="'+escHtml(u.n||'')+'"></td>'+
+      '<td><input id="adm-user-pass-'+u.id+'" value="'+escHtml(u.p||'')+'"></td>'+
+      '<td>'+roleSelect(u.id,u.r)+'</td><td>'+leaderSelect(u.id,u.leaderId)+'</td>'+
+      '<td class="r"><button class="adm-btn" onclick="admSaveUser('+u.id+')">Zapisz</button><button class="adm-btn del" onclick="admDeleteUser('+u.id+')">Usuń</button></td></tr>';
+  }).join('');
+  return '<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Login</th><th>Nazwa</th><th>Hasło</th><th>Rola</th><th>Lider / zakres</th><th></th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="6"><div class="adm-empty">Brak kont użytkowników.</div></td></tr>')+
+    '</tbody></table></div><div class="adm-user-add"><button class="btn btn-primary btn-sm" onclick="admAddUser()">Dodaj konto</button></div>';
+}
+function admSaveUser(id){
+  if(!can('adminConfig')) return;
+  var users=admUsers();
+  var u=users.find(function(x){return x.id===id;});
+  if(!u) return;
+  u.l=(document.getElementById('adm-user-login-'+id)?.value||'').trim();
+  u.n=(document.getElementById('adm-user-name-'+id)?.value||'').trim();
+  u.p=document.getElementById('adm-user-pass-'+id)?.value||'';
+  u.r=document.getElementById('adm-user-role-'+id)?.value||'viewer';
+  u.leaderId=document.getElementById('adm-user-leader-'+id)?.value||'';
+  u.leaderScope=nameForAdminId('assessors',u.leaderId)||'';
+  if((u.r==='leader'||u.r==='assessor')&&u.leaderScope&&!u.n) u.n=u.leaderScope;
+  admSaveUsers(users);
+  logChange('Użytkownicy','Zmieniono konto: '+(u.l||u.n||id));
+  buildAdmin();
+  showToast('Konto zapisane','ok');
+}
+function admAddUser(){
+  if(!can('adminConfig')) return;
+  var users=admUsers();
+  var id=Date.now();
+  users.push({id:id,l:'user'+users.length,p:'haslo123',r:'viewer',n:'Nowy użytkownik',leaderId:'',leaderScope:''});
+  admSaveUsers(users);
+  logChange('Użytkownicy','Dodano konto');
+  buildAdmin();
+}
+function admDeleteUser(id){
+  if(!can('adminConfig')) return;
+  var users=admUsers();
+  var u=users.find(function(x){return x.id===id;});
+  if(!u||u.l==='admin'){showToast('Tego konta nie można usunąć','warn');return;}
+  admSaveUsers(users.filter(function(x){return x.id!==id;}));
+  logChange('Użytkownicy','Usunięto konto: '+(u.l||id));
+  buildAdmin();
 }
 function admSaveGoals(){
   if(!can('adminConfig')){showToast('Brak uprawnień','warn');buildAdmin();return;}
@@ -432,13 +609,13 @@ function adminTeamCards(){
   var rows=adminScopedRows();
   var byLeader={};
   activePeople().forEach(function(p){
-    var key=p.leader||'Bez lidera';
-    if(!byLeader[key]) byLeader[key]={leader:key,department:p.department||'',people:[],cards:0,sum:0,below:0,great:0};
+    var key=p.leaderId||idForAdminItem('assessors',p.leader||'Bez lidera');
+    if(!byLeader[key]) byLeader[key]={id:key,leader:p.leader||'Bez lidera',department:p.department||'',people:[],cards:0,sum:0,below:0,great:0};
     byLeader[key].people.push(p);
   });
   rows.forEach(function(e){
-    var key=e.oce||'Bez lidera';
-    if(!byLeader[key]) byLeader[key]={leader:key,department:e.dzial||'',people:[],cards:0,sum:0,below:0,great:0};
+    var key=entryLeaderId(e)||idForAdminItem('assessors',e.oce||'Bez lidera');
+    if(!byLeader[key]) byLeader[key]={id:key,leader:e.oce||nameForAdminId('assessors',key)||'Bez lidera',department:e.dzial||'',people:[],cards:0,sum:0,below:0,great:0};
     byLeader[key].cards++;
     byLeader[key].sum+=e.avgFinal||0;
     if(e.rating==='below') byLeader[key].below++;
@@ -465,7 +642,6 @@ function adminTeamHtml(){
   return '<div class="adm-team-picker"><label>Wybierz zespół</label><select id="adm-team-select" onchange="admSelectTeam(this.value)">'+opts+'</select></div>'+
     '<div class="adm-team-detail">'+
       '<div class="adm-team-summary"><div><div class="adm-team-name">'+escHtml(t.leader)+'</div><div class="adm-team-sub">'+escHtml(t.department||'Dział nieprzypisany')+'</div></div><div class="adm-team-score" style="color:'+col+'">'+(t.cards?avg+'%':'—')+'</div></div>'+
-      '<div class="adm-team-metrics"><span>'+t.people.length+' specjalistów</span><span>'+t.cards+' kart</span><span>'+t.great+' bardzo dobrych</span><span>'+t.below+' poniżej</span></div>'+
       '<div class="adm-team-table-wrap"><table class="org-table adm-team-table"><thead><tr><th>Specjalista</th><th>Stanowisko</th><th>Status</th><th></th></tr></thead><tbody>'+(people||'<tr><td colspan="4"><div class="adm-empty">Brak specjalistów w zespole.</div></td></tr>')+'</tbody></table></div>'+
     '</div>';
 }
@@ -475,15 +651,99 @@ function admSelectTeam(leader){
   var el=document.getElementById('adm-team-select');
   if(el) el.scrollIntoView({block:'nearest'});
 }
+function adminOrgHtml(){
+  var teams=adminTeamCards();
+  if(!teams.length) return '<div class="adm-empty">Brak zespołów do pokazania.</div>';
+  var byDept={};
+  teams.forEach(function(t){
+    var dep=t.department||'Dział nieprzypisany';
+    if(!byDept[dep]) byDept[dep]=[];
+    byDept[dep].push(t);
+  });
+  return Object.keys(byDept).sort(function(a,b){return a.localeCompare(b,'pl');}).map(function(dep){
+    return '<div class="adm-org-band"><div class="adm-org-band-head"><div><strong>'+escHtml(dep)+'</strong><span>'+byDept[dep].length+' zespołów</span></div></div>'+
+      '<div class="adm-org-team-grid">'+byDept[dep].map(function(t){
+        var avg=t.cards?Math.round(t.sum/t.cards):0;
+        var col=avg>=92?'var(--green)':avg>=82?'var(--amber)':'var(--red)';
+        var people=t.people.slice(0,5).map(function(p){
+          var idx=adminData.people.indexOf(p);
+          return '<button class="adm-org-person" onclick="admEditPerson('+idx+')" '+(!can('adminConfig')?'disabled':'')+'><span>'+escHtml(p.name)+'</span><small>'+escHtml(p.position||'Brak stanowiska')+'</small></button>';
+        }).join('');
+        return '<article class="adm-org-team-card">'+
+          '<div class="adm-org-team-top"><div><div class="adm-org-leader">'+escHtml(t.leader)+'</div><div class="adm-item-sub">'+t.people.length+' specjalistów · '+t.cards+' kart</div></div><strong style="color:'+col+'">'+(t.cards?avg+'%':'—')+'</strong></div>'+
+          '<div class="adm-org-team-kpis"><span>'+t.great+' bardzo dobrych</span><span>'+t.below+' poniżej</span></div>'+
+          '<div class="adm-org-people">'+(people||'<div class="adm-empty">Brak specjalistów.</div>')+(t.people.length>5?'<div class="adm-org-more">+'+(t.people.length-5)+' kolejnych</div>':'')+'</div>'+
+        '</article>';
+      }).join('')+'</div></div>';
+  }).join('');
+}
+function adminOrgHtml(){
+  var teams=adminTeamCards();
+  if(!teams.length) return '<div class="adm-empty">Brak zespołów do pokazania.</div>';
+  var byDept={};
+  teams.forEach(function(t){
+    var dep=t.department||'Dział nieprzypisany';
+    if(!byDept[dep]) byDept[dep]=[];
+    byDept[dep].push(t);
+  });
+  return Object.keys(byDept).sort(function(a,b){return a.localeCompare(b,'pl');}).map(function(dep){
+    var openAttr='';
+    return '<details class="adm-org-band"'+openAttr+'><summary class="adm-org-band-head"><div><strong>'+escHtml(dep)+'</strong><span>'+byDept[dep].length+' zespołów</span></div><b class="adm-org-chev">⌄</b></summary>'+
+      '<div class="adm-org-team-grid">'+byDept[dep].map(function(t){
+        var people=t.people.slice(0,5).map(function(p){
+          var idx=adminData.people.indexOf(p);
+          return '<button class="adm-org-person" onclick="admEditPerson('+idx+')" '+(!can('adminConfig')?'disabled':'')+'><span>'+escHtml(p.name)+'</span><small>'+escHtml(p.position||'Brak stanowiska')+'</small></button>';
+        }).join('');
+        return '<article class="adm-org-team-card">'+
+          '<div class="adm-org-team-top"><div><div class="adm-org-leader">'+escHtml(t.leader)+'</div><div class="adm-item-sub">'+t.people.length+' specjalistów · '+t.cards+' kart</div></div><button class="adm-team-manage" onclick="admOpenTeamModal(\''+escHtml(t.id)+'\')" '+(!can('adminConfig')?'disabled':'')+'>Zobacz/Edytuj zespół</button></div>'+
+          '<div class="adm-org-team-kpis"><span>'+t.great+' bardzo dobrych</span><span>'+t.below+' poniżej</span></div>'+
+          '<div class="adm-org-people">'+(people||'<div class="adm-empty">Brak specjalistów.</div>')+(t.people.length>5?'<div class="adm-org-more">+'+(t.people.length-5)+' kolejnych</div>':'')+'</div>'+
+        '</article>';
+      }).join('')+'</div></details>';
+  }).join('');
+}
+function admOpenTeamModal(teamId){
+  if(!can('adminConfig')){showToast('Brak uprawnień','warn');return;}
+  normalizeAdminData();
+  var team=adminTeamCards().find(function(t){return String(t.id)===String(teamId);});
+  if(!team){showToast('Nie znaleziono zespołu','warn');return;}
+  var old=document.getElementById('adm-team-modal');if(old) old.remove();
+  var rows=team.people.map(function(p){
+    var idx=adminData.people.indexOf(p);
+    return '<tr><td><strong>'+escHtml(p.name)+'</strong><div class="adm-item-sub">'+escHtml(p.position||'Brak stanowiska')+'</div></td>'+
+      '<td>'+escHtml(p.department||'—')+'</td>'+
+      '<td><span class="lock-badge '+(p.active===false?'locked':'')+'" onclick="admTogglePerson('+idx+')">'+(p.active===false?'Nieaktywny':'Aktywny')+'</span></td>'+
+      '<td class="r"><button class="adm-btn" onclick="admEditPerson('+idx+')">Edytuj</button></td></tr>';
+  }).join('');
+  var div=document.createElement('div');
+  div.id='adm-team-modal';
+  div.className='modal-overlay open';
+  div.innerHTML='<div class="modal adm-team-modal">'+
+    '<h3>'+escHtml(team.leader)+'</h3>'+
+    '<p>'+escHtml(team.department||'Dział nieprzypisany')+' · '+team.people.length+' specjalistów · '+team.cards+' kart</p>'+
+    '<div class="adm-team-modal-actions"><button class="btn btn-primary btn-sm" onclick="admNewPerson()">Dodaj specjalistę</button></div>'+
+    '<div class="adm-table-wrap adm-team-modal-table"><table class="org-table adm-team-table"><thead><tr><th>Specjalista</th><th>Dział</th><th>Status</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="4"><div class="adm-empty">Brak specjalistów w zespole.</div></td></tr>')+'</tbody></table></div>'+
+    '<div class="modal-btns"><button class="btn btn-outline btn-sm" onclick="admCloseTeamModal()">Zamknij</button></div>'+
+  '</div>';
+  document.body.appendChild(div);
+}
+function admCloseTeamModal(){var el=document.getElementById('adm-team-modal');if(el) el.remove();}
 function adminDictionaryCard(d){
   var cnt=getActiveAdminItems(d.key).length, ac=(adminData.archived[d.key]||[]).length;
+  var addBtn=d.key==='specialists'
+    ? '<button class="btn btn-primary btn-sm" onclick="admNewPerson()" '+(!can('adminConfig')?'disabled':'')+'>Dodaj specjalistę</button>'
+    : '<button class="btn btn-outline btn-sm" onclick="admFocusDict(\''+d.key+'\',\''+d.inp+'\')" '+(!can('adminConfig')?'disabled':'')+'>Dodaj</button>';
   return '<section class="adm-panel">'+
-    '<div class="adm-panel-hdr"><div><h3>'+d.icon+' '+d.label+'</h3><p>'+cnt+' aktywnych, '+ac+' w archiwum</p></div></div>'+
+    '<div class="adm-panel-hdr"><div><h3>'+d.icon+' '+d.label+'</h3><p>'+cnt+' aktywnych, '+ac+' w archiwum</p></div>'+addBtn+'</div>'+
     '<div class="adm-panel-body">'+
       '<input type="text" class="adm-search" id="adms-'+d.key+'" placeholder="Szukaj..." oninput="admFilter(\''+d.key+'\',this.value)">'+
       '<div class="adm-list" id="adml-'+d.key+'"></div>'+
-      '<div class="adm-add"><input type="text" id="'+d.inp+'" placeholder="'+d.ph+'"><button class="btn btn-primary btn-sm" data-k="'+d.key+'" data-i="'+d.inp+'" onclick="admAdd(this)" '+(!can('adminConfig')?'disabled':'')+'>Dodaj</button></div>'+
+      (d.key==='specialists'?'':'<div class="adm-add"><input type="text" id="'+d.inp+'" placeholder="'+d.ph+'"><button class="btn btn-primary btn-sm" data-k="'+d.key+'" data-i="'+d.inp+'" onclick="admAdd(this)" '+(!can('adminConfig')?'disabled':'')+'>Zapisz</button></div>')+
     '</div></section>';
+}
+function admFocusDict(key,inputId){
+  var inp=document.getElementById(inputId);
+  if(inp){inp.focus();inp.select();}
 }
 
 function buildAdmin(){
@@ -499,7 +759,8 @@ function buildAdmin(){
   var leaders=getActiveAdminItems('assessors'), deps=getActiveAdminItems('departments'), pos=getActiveAdminItems('positions');
   var activeLeaderCount=adminTeamCards().filter(function(t){return t.people.length>0;}).length;
   var avg=total?Math.round(rows.reduce(function(a,b){return a+(b.avgFinal||0);},0)/total):0;
-  var roleOpts={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
+  var roleKeys=['admin','director','leader','assessor','viewer'];
+  var roleOpts={admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
   var dicts=[
     {key:'assessors',icon:'👤',label:'Liderzy / oceniający',inp:'adm-inp-assessors',ph:'Imię i nazwisko lidera'},
     {key:'specialists',icon:'👥',label:'Specjaliści',inp:'adm-inp-specialists',ph:'Imię i nazwisko specjalisty'},
@@ -525,18 +786,16 @@ function buildAdmin(){
 
   h+='<section class="adm-section">';
   h+='<div class="adm-section-head"><div><h3>Zespoły liderów</h3><p>Każdy lider jest oceniającym i widzi po zalogowaniu tylko swój zespół.</p></div><button class="btn btn-outline btn-sm" onclick="loadSeedData()">Wczytaj demo</button></div>';
-  h+='<div class="adm-team-single">'+adminTeamHtml()+'</div>';
+  h+='';
+  h+='<div class="adm-section-head"><div><h3>Użytkownicy i konta</h3><p>Login, hasło, rola oraz zakres lidera są konfigurowane w jednym miejscu.</p></div></div>';
+  h+=admUsersHtml(roleOpts);
+  h+='</section>';
+
+  h+='<section class="adm-section"><div class="adm-section-head"><div><h3>Zespoły liderów</h3><p>Działy są zwinięte, a zespołem zarządzasz z poziomu przycisku na kaflu.</p></div><button class="btn btn-outline btn-sm" onclick="loadSeedData()">Wczytaj demo</button></div><div class="adm-team-single">'+adminOrgHtml()+'</div>';
   h+='</section>';
 
   h+='<section class="adm-section">';
-  h+='<div class="adm-section-head"><div><h3>Przypisania specjalistów</h3><p>Dodaj lub zmień relację specjalista → lider → dział → stanowisko.</p></div><button class="btn btn-outline btn-sm" onclick="admSync()">Synchronizuj z ewidencją</button></div>';
-  h+='<div class="adm-form-row">';
-  h+='<div><label>Specjalista</label><input id="adm-person-name" placeholder="Imię i nazwisko"></div>';
-  h+='<div><label>Lider / oceniający</label><select id="adm-person-leader">'+optsHtml(leaders,'')+'</select></div>';
-  h+='<div><label>Dział</label><select id="adm-person-department">'+optsHtml(deps,'')+'</select></div>';
-  h+='<div><label>Stanowisko</label><select id="adm-person-position">'+optsHtml(pos,'')+'</select></div>';
-  h+='<button class="btn btn-primary btn-sm" onclick="admAddPerson()" '+(!can('adminConfig')?'disabled':'')+'>Zapisz przypisanie</button>';
-  h+='</div>';
+  h+='<div class="adm-section-head"><div><h3>Specjaliści i przypisania</h3><p>Dodawanie i edycja odbywa się w oknie z kompletem danych osoby.</p></div><div class="adm-head-actions"><button class="btn btn-primary btn-sm" onclick="admNewPerson()" '+(!can('adminConfig')?'disabled':'')+'>Dodaj specjalistę</button><button class="btn btn-outline btn-sm" onclick="admSync()">Synchronizuj z ewidencją</button></div></div>';
   h+='<div class="adm-table-wrap"><table class="org-table adm-org-table"><thead><tr><th>Specjalista</th><th>Lider</th><th>Dział</th><th>Stanowisko</th><th>Status</th><th></th></tr></thead><tbody>';
   h+=tablePeople.length?tablePeople.map(function(row){
     var p=row.person,i=row.idx;
@@ -566,16 +825,20 @@ function buildAdmin(){
 
   h+='<section class="adm-section"><div class="adm-section-head"><div><h3>Uprawnienia i historia</h3><p>Matryca dostępu oraz ostatnie zmiany w konfiguracji.</p></div><button class="btn btn-outline btn-sm" onclick="admExport()">Eksportuj konfigurację</button></div>';
   h+='<div class="adm-bottom-grid">';
-  h+='<details class="adm-perm-details"><summary>Rozwiń widok uprawnień</summary><div class="perm-grid adm-perm-grid"><div class="perm-head">Akcja</div><div class="perm-head">Admin</div><div class="perm-head">Lider</div><div class="perm-head">Oceniający</div><div class="perm-head">Podgląd</div>';
+  h+='<details class="adm-perm-details"><summary>Rozwiń widok uprawnień</summary><div class="perm-grid adm-perm-grid"><div class="perm-head">Akcja</div>'+roleKeys.map(function(role){return '<div class="perm-head">'+roleOpts[role]+'</div>';}).join('');
   PERM_LABELS.forEach(function(row){
     h+='<div>'+row[1]+'</div>';
-    ['admin','leader','assessor','viewer'].forEach(function(role){
-      var ok=(ROLE_PERMS[role]||[]).indexOf(row[0])>-1;
-      h+='<div class="'+(ok?'perm-yes':'perm-no')+'">'+(ok?'Dostęp':'Blokada')+'</div>';
+    roleKeys.forEach(function(role){
+      var ok=getRolePerms(role).indexOf(row[0])>-1;
+      if(can('adminConfig')){
+        h+='<label class="perm-cell"><input type="checkbox" '+(ok?'checked':'')+' onchange="admToggleRolePerm(\''+role+'\',\''+row[0]+'\')"> '+(ok?'Tak':'Brak')+'</label>';
+      } else {
+        h+='<div class="'+(ok?'perm-yes':'perm-no')+'">'+(ok?'Dostęp':'Blokada')+'</div>';
+      }
     });
   });
   h+='</div></details>';
-  h+='<div class="adm-history">'+(adminData.history.length?adminData.history.slice(0,12).map(function(x){return '<div class="adm-item"><div><div class="adm-item-name">'+escHtml(x.type)+' · '+escHtml(x.desc)+'</div><div class="adm-item-sub">'+new Date(x.ts).toLocaleString('pl-PL')+' · '+escHtml(({admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'}[x.role]||x.role))+'</div></div></div>';}).join(''):'<div class="adm-empty">Brak historii zmian.</div>')+'</div>';
+  h+='<div class="adm-history">'+(adminData.history.length?adminData.history.slice(0,12).map(function(x){return '<div class="adm-item"><div><div class="adm-item-name">'+escHtml(x.type)+' · '+escHtml(x.desc)+'</div><div class="adm-item-sub">'+new Date(x.ts).toLocaleString('pl-PL')+' · '+escHtml((roleOpts[x.role]||x.role))+'</div></div></div>';}).join(''):'<div class="adm-empty">Brak historii zmian.</div>')+'</div>';
   h+='</div></section>';
   h+='</div>';
   wrap.innerHTML=h;

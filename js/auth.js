@@ -8,6 +8,7 @@ var AUTH_USERS_KEY = 'oceniator_users_v1';
 var AUTH_SESSION_KEY = 'oceniator_session_v1';
 var AUTH_ROLES = {
   admin: 'Administrator',
+  director: 'Dyrektor',
   leader: 'Lider',
   assessor: 'Oceniający',
   viewer: 'Podgląd'
@@ -18,14 +19,24 @@ function authDefaultUsers(){
     {id:1,login:'admin',name:'Administrator systemu',role:'admin',password:'admin123',active:true},
     {id:2,login:'lider',name:'Lider zespołu',role:'leader',password:'lider123',active:true},
     {id:3,login:'oceniajacy',name:'Oceniający',role:'assessor',password:'ocena123',active:true},
-    {id:4,login:'podglad',name:'Użytkownik podglądu',role:'viewer',password:'podglad123',active:true}
+    {id:4,login:'dyrektor',name:'Dyrektor',role:'director',password:'dyrektor123',active:true},
+    {id:5,login:'podglad',name:'Użytkownik podglądu',role:'viewer',password:'podglad123',active:true}
   ];
 }
 
 function authLoadUsers(){
   try{
     var raw = DataStore.getValue(AUTH_USERS_KEY, null);
-    if(raw) return JSON.parse(raw) || [];
+    if(raw){
+      var parsed = JSON.parse(raw) || [];
+      authDefaultUsers().forEach(function(defaultUser){
+        if(!parsed.some(function(user){return user.login===defaultUser.login;})){
+          parsed.push(defaultUser);
+        }
+      });
+      authSaveUsers(parsed);
+      return parsed;
+    }
   }catch(e){}
   var users = authDefaultUsers();
   authSaveUsers(users);
@@ -87,7 +98,7 @@ function authShowLogin(){
       '<button class="auth-btn" type="submit">Zaloguj</button>'+
       '<div class="auth-error" id="auth-error">Nieprawidłowy login lub hasło.</div>'+
     '</form>'+
-    '<div class="auth-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>lider / lider123<br>oceniajacy / ocena123<br>podglad / podglad123</div>'+
+    '<div class="auth-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>dyrektor / dyrektor123<br>lider / lider123<br>oceniajacy / ocena123<br>podglad / podglad123</div>'+
   '</div>';
   document.body.appendChild(el);
 }

@@ -6,7 +6,9 @@ var ADMIN_KEY = 'pep_admin_v1';
 var adminData = {
   assessors:[],specialists:[],departments:[],positions:[],
   people:[],
+  ids:{assessors:{},specialists:{},departments:{},positions:{}},
   archived:{assessors:[],specialists:[],departments:[],positions:[]},
+  aliases:{assessors:{},specialists:{},departments:{},positions:{}},
   history:[],
   periods:[
     {code:'P1',name:'P1',from:'01-01',to:'04-30'},

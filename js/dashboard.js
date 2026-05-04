@@ -4,7 +4,102 @@
 
 // ── DASHBOARD ──
 var GOAL=9, dashCh={}, cmpSelected=[], cmpType='r', editingPersonIdx=-1, admSearch={assessors:'',specialists:'',departments:'',positions:''};
+var DASHBOARD_LAYOUT_KEY='oceniator-dashboard-layout';
+var DASHBOARD_PANEL_DEFS=[
+  {id:'d-kpi',title:'KPI'},
+  {id:'d-goal',title:'Realizacja celów'},
+  {id:'d-r4',title:'Wyniki zespołów liderów'},
+  {id:'d-r1',title:'Punkty jakości'},
+  {id:'d-r2',title:'Ranking i rozkład'},
+  {id:'d-r3',title:'Trend i porównanie'}
+];
+var dashLayoutState=loadDashboardLayout();
+var dashLayoutObserver=null;
 (function(){var s=DataStore.getGoal();if(s&&!isNaN(s))GOAL=parseInt(s);})();
+
+function loadDashboardLayout(){
+  var stored=localStorage.getItem(DASHBOARD_LAYOUT_KEY);
+  var order=DASHBOARD_PANEL_DEFS.map(function(p){return p.id;});
+  var sizes={};
+  if(stored){
+    try{
+      var parsed=JSON.parse(stored);
+      if(parsed && Array.isArray(parsed.order)){
+        var safeOrder=parsed.order.filter(function(id){return order.indexOf(id)>=0;});
+        order=safeOrder.concat(order.filter(function(id){return safeOrder.indexOf(id)<0;}));
+      }
+      if(parsed && typeof parsed.sizes==='object' && parsed.sizes) sizes=parsed.sizes;
+    }catch(e){}
+  }
+  return {order:order,sizes:sizes};
+}
+function saveDashboardLayout(){
+  try{localStorage.setItem(DASHBOARD_LAYOUT_KEY,JSON.stringify({order:dashLayoutState.order,sizes:dashLayoutState.sizes}));}catch(e){}
+}
+function getPanelSize(id){
+  var size=dashLayoutState.sizes[id];
+  if(size && typeof size.width==='number' && typeof size.height==='number') return size;
+  return null;
+}
+function resetPanelSize(id){
+  if(dashLayoutState.sizes[id]) delete dashLayoutState.sizes[id];
+  saveDashboardLayout();
+  var panel=document.querySelector('.dash-panel[data-panel="'+id+'"]');
+  if(panel){panel.style.width='';panel.style.height='';}
+}
+function resetDashboardLayout(){
+  dashLayoutState={order:DASHBOARD_PANEL_DEFS.map(function(p){return p.id;}),sizes:{}};
+  saveDashboardLayout();
+  buildDashboardPanels();
+  renderDash();
+  if(typeof showToast==='function') showToast('Układ dashboardu zresetowany','ok');
+}
+function reorderDashboardPanels(draggedId,targetId){
+  var order=dashLayoutState.order;
+  var from=order.indexOf(draggedId);
+  var to=order.indexOf(targetId);
+  if(from<0||to<0||from===to) return;
+  order.splice(to,0,order.splice(from,1)[0]);
+  saveDashboardLayout();
+}
+function initDashboardLayout(){
+  var layout=document.getElementById('dash-layout');
+  if(!layout) return;
+  if(dashLayoutObserver){dashLayoutObserver.disconnect();dashLayoutObserver=null;}
+  var dragSrc=null;
+  Array.from(layout.querySelectorAll('.dash-panel')).forEach(function(panel){
+    panel.classList.remove('dragging','drag-over');
+    panel.setAttribute('draggable','true');
+    panel.addEventListener('dragstart',function(e){dragSrc=panel.dataset.panel;panel.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragSrc);}catch(err){} });
+    panel.addEventListener('dragend',function(){panel.classList.remove('dragging');dragSrc=null;});
+    panel.addEventListener('dragover',function(e){e.preventDefault();if(panel.dataset.panel!==dragSrc) panel.classList.add('drag-over');});
+    panel.addEventListener('dragleave',function(){panel.classList.remove('drag-over');});
+    panel.addEventListener('drop',function(e){e.preventDefault();panel.classList.remove('drag-over');var targetId=panel.dataset.panel; if(dragSrc && targetId && dragSrc!==targetId){reorderDashboardPanels(dragSrc,targetId);buildDashboardPanels();renderDash();}});
+  });
+  dashLayoutObserver=new ResizeObserver(function(entries){entries.forEach(function(entry){var panel=entry.target; var id=panel.dataset.panel; if(!id) return; dashLayoutState.sizes[id]={width:Math.round(entry.contentRect.width),height:Math.round(entry.contentRect.height)}; saveDashboardLayout();});});
+  Array.from(layout.querySelectorAll('.dash-panel')).forEach(function(panel){dashLayoutObserver.observe(panel);});
+}
+function buildDashboardPanels(){
+  var wrap=document.getElementById('wrap-dash');
+  if(!wrap) return;
+  var layout=document.getElementById('dash-layout');
+  var newLayout=document.createElement('div');
+  newLayout.id='dash-layout';
+  newLayout.className='dash-layout';
+  dashLayoutState.order.forEach(function(panelId){
+    var def=DASHBOARD_PANEL_DEFS.find(function(p){return p.id===panelId;});
+    if(!def) return;
+    var panel=document.createElement('div');
+    panel.className='dash-panel';
+    panel.dataset.panel=panelId;
+    var size=getPanelSize(panelId);
+    if(size){panel.style.width=size.width+'px'; panel.style.height=size.height+'px';}
+    panel.innerHTML='<div class="dash-panel-header"><div class="dash-panel-title">'+def.title+'</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\''+panelId+'\')">↺</button></div></div><div class="dash-panel-content" id="'+panelId+'"></div>';
+    newLayout.appendChild(panel);
+  });
+  if(layout){layout.replaceWith(newLayout);} else {wrap.appendChild(newLayout);}
+  initDashboardLayout();
+}
 
 function dashRows(){
   var fp=document.getElementById('d-fp')?.value||'';
@@ -50,10 +145,19 @@ function buildDashboard(){
     '<div class="df"><label>Ocena:</label><select id="d-fr" onchange="renderDash()"><option value="">Wszystkie</option><option value="great">Bardzo dobry</option><option value="good">Dobry</option><option value="below">Poniżej std.</option></select></div>'+
     '<div class="df"><label>Od:</label><input type="date" id="d-df" onchange="renderDash()"></div>'+
     '<div class="df"><label>Do:</label><input type="date" id="d-dt" onchange="renderDash()"></div>'+
-    '<button class="btn btn-outline btn-sm" onclick="resetDashF()" style="margin-left:auto">↺ Reset</button>'+
+    '<button class="btn btn-outline btn-sm" onclick="resetDashF()" style="margin-left:auto">↺ Reset filtrów</button>'+
+    '<button class="btn btn-outline btn-sm" onclick="resetDashboardLayout()">⚙️ Reset układu</button>'+
   '</div>'+
-  '<div id="d-kpi"></div><div id="d-goal"></div>'+
-  '<div class="dash-g2" id="d-r1"></div><div class="dash-g2" id="d-r2"></div><div class="dash-g1" id="d-r3"></div><div class="dash-g1" id="d-r4"></div>';
+  '<div id="dash-layout" class="dash-layout">'+
+    '<div class="dash-panel" data-panel="d-kpi"><div class="dash-panel-header"><div class="dash-panel-title">KPI</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-kpi\')">↺</button></div></div><div class="dash-panel-content" id="d-kpi"></div></div>'+
+    '<div class="dash-panel" data-panel="d-goal"><div class="dash-panel-header"><div class="dash-panel-title">Realizacja celów</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-goal\')">↺</button></div></div><div class="dash-panel-content" id="d-goal"></div></div>'+
+    '<div class="dash-panel" data-panel="d-r4"><div class="dash-panel-header"><div class="dash-panel-title">Wyniki zespołów liderów</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-r4\')">↺</button></div></div><div class="dash-panel-content" id="d-r4"></div></div>'+
+    '<div class="dash-panel" data-panel="d-r1"><div class="dash-panel-header"><div class="dash-panel-title">Punkty jakości</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-r1\')">↺</button></div></div><div class="dash-panel-content" id="d-r1"></div></div>'+
+    '<div class="dash-panel" data-panel="d-r2"><div class="dash-panel-header"><div class="dash-panel-title">Ranking i rozkład</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-r2\')">↺</button></div></div><div class="dash-panel-content" id="d-r2"></div></div>'+
+    '<div class="dash-panel" data-panel="d-r3"><div class="dash-panel-header"><div class="dash-panel-title">Trend i porównanie</div><div class="dash-panel-actions"><button class="btn btn-outline btn-sm btn-icon" onclick="event.stopPropagation();resetPanelSize(\'d-r3\')">↺</button></div></div><div class="dash-panel-content" id="d-r3"></div></div>'+
+  '</div>';
+  if(dashLayoutState.order && dashLayoutState.order.length){buildDashboardPanels();}
+  renderDash();
   var fp=document.getElementById('d-fp');
   if(fp&&currentPeriod&&periodSet.has(currentPeriod)) fp.value=currentPeriod;
   var fl=document.getElementById('d-fl');

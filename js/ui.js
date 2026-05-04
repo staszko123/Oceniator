@@ -35,7 +35,7 @@ function updateRoleBadge(){
   var icon=document.getElementById('role-sw-icon');
   if(sel) sel.value=r;
   if(sw) sw.setAttribute('data-role',r);
-  var icons={admin:'⚙️',leader:'👑',assessor:'✅',viewer:'👁️'};
+  var icons={admin:'⚙️',director:'🏢',leader:'👑',assessor:'✅',viewer:'👁️'};
   if(icon) icon.textContent=icons[r]||'⚙️';
   document.querySelectorAll('.leader-only').forEach(function(el){
     el.style.display=activeLeaderScope()?'flex':'none';

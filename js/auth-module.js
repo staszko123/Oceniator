@@ -1,37 +1,54 @@
 export function authInit(){
   const usersKey='oc_users_v1';
   const sessionKey='oc_session_v1';
-  const roles={admin:'Administrator',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
+  const roles={admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
 
   function demoLeaderUsers(){
     const org=typeof window.buildDemoOrg==='function'?window.buildDemoOrg():{leaders:[]};
-    return (org.leaders||[]).map((leader,i)=>({
+    const aliases=Object.assign({},(window.adminData&&adminData.aliases&&adminData.aliases.assessors)||{});
+    ((window.adminData&&adminData.history)||[]).slice().reverse().forEach(item=>{
+      const desc=(item&&item.desc)||'';
+      const match=desc.match(/^Zmieniono wpis: (.+?)\s+→\s+(.+)$/);
+      if(match&&!aliases[match[1]]) aliases[match[1]]=match[2];
+    });
+    return (org.leaders||[]).map((leader,i)=>{
+      const seen=new Set();
+      while(aliases[leader]&&aliases[leader]!==leader&&!seen.has(leader)){
+        seen.add(leader);
+        leader=aliases[leader];
+      }
+      return {
       id:100+i,
       l:'lider'+String(i+1).padStart(2,'0'),
       p:'lider123',
       r:'leader',
       n:leader,
-      leaderScope:leader
-    }));
+      leaderScope:leader,
+      leaderId:(typeof window.idForAdminItem==='function')?window.idForAdminItem('assessors',leader):''
+    };
+    });
   }
 
   function mergeUsers(base){
     const list=Array.isArray(base)?base:[];
     const byLogin=new Map(list.map(u=>[u.l,u]));
     demoLeaderUsers().forEach(u=>{
-      byLogin.set(u.l,Object.assign({},byLogin.get(u.l)||{},u));
+      byLogin.set(u.l,Object.assign({},u,byLogin.get(u.l)||{},{n:u.n,leaderScope:u.leaderScope,leaderId:u.leaderId}));
     });
+    byLogin.set('dyrektor',Object.assign({},{
+      id:4,l:'dyrektor',p:'dyrektor123',r:'director',n:'Dyrektor'
+    },byLogin.get('dyrektor')||{}));
     const firstLeader=demoLeaderUsers()[0];
     const secondLeader=demoLeaderUsers()[1]||firstLeader;
     if(firstLeader){
-      byLogin.set('lider',Object.assign({},byLogin.get('lider')||{},{
-        id:2,l:'lider',p:'lider123',r:'leader',n:firstLeader.n,leaderScope:firstLeader.leaderScope
-      }));
+      byLogin.set('lider',Object.assign({},{
+        id:2,l:'lider',p:'lider123',r:'leader',n:firstLeader.n,leaderScope:firstLeader.leaderScope,leaderId:firstLeader.leaderId
+      },byLogin.get('lider')||{},{n:firstLeader.n,leaderScope:firstLeader.leaderScope,leaderId:firstLeader.leaderId}));
     }
     if(secondLeader){
-      byLogin.set('oceniajacy',Object.assign({},byLogin.get('oceniajacy')||{},{
-        id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:secondLeader.n,leaderScope:secondLeader.leaderScope
-      }));
+      byLogin.set('oceniajacy',Object.assign({},{
+        id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:secondLeader.n,leaderScope:secondLeader.leaderScope,leaderId:secondLeader.leaderId
+      },byLogin.get('oceniajacy')||{},{n:secondLeader.n,leaderScope:secondLeader.leaderScope,leaderId:secondLeader.leaderId}));
     }
     return Array.from(byLogin.values()).sort((a,b)=>(a.id||9999)-(b.id||9999));
   }
@@ -43,7 +60,8 @@ export function authInit(){
         {id:1,l:'admin',p:'admin123',r:'admin',n:'Administrator systemu'},
         {id:2,l:'lider',p:'lider123',r:'leader',n:'Lider zespołu'},
         {id:3,l:'oceniajacy',p:'ocena123',r:'assessor',n:'Oceniający'},
-        {id:4,l:'podglad',p:'podglad123',r:'viewer',n:'Użytkownik podglądu'}
+        {id:4,l:'dyrektor',p:'dyrektor123',r:'director',n:'Dyrektor'},
+        {id:5,l:'podglad',p:'podglad123',r:'viewer',n:'Użytkownik podglądu'}
       ];
     }
     u=mergeUsers(u);
@@ -111,7 +129,7 @@ export function authInit(){
             <button class="oc-login-btn" type="submit">Wejdź do aplikacji</button>
             <div class="oc-error" id="oc-login-error">Nieprawidłowy login lub hasło.</div>
           </form>
-          <div class="oc-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>lider01 / lider123 (Alicja Wrona)<br>lider02 / lider123 (Mateusz Cieślak)<br>lider / lider123 (alias lider01)<br>podglad / podglad123</div>
+          <div class="oc-demo"><strong>Konta startowe:</strong><br>admin / admin123<br>dyrektor / dyrektor123<br>lider01 / lider123 (Alicja Wrona)<br>lider02 / lider123 (Mateusz Cieślak)<br>lider / lider123 (alias lider01)<br>podglad / podglad123</div>
         </section>
       </div>`;
     document.body.appendChild(d);
@@ -143,6 +161,8 @@ export function authInit(){
   if(!u){loginUI();return;}
 
   adminData.access.role=u.r;
+  window.currentRole=u.r;
+  window.currentUserData=u;
   saveAdminData();
   updateRoleBadge();
   if(typeof updateBadge==='function') updateBadge();

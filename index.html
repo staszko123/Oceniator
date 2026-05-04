@@ -6,7 +6,7 @@
   <title>System Oceny Jakości | PeP &amp; P24</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260504-admin-teams">
 </head>
 <body>
 
@@ -109,6 +109,7 @@
         <span class="role-sw-icon" id="role-sw-icon">⚙️</span>
         <select class="role-sw-sel" id="role-sw-sel" onchange="admSetRole(this.value)">
           <option value="admin">Administrator</option>
+          <option value="director">Dyrektor</option>
           <option value="leader">Lider</option>
           <option value="assessor">Oceniający</option>
           <option value="viewer">Podgląd</option>
@@ -128,6 +129,17 @@
                 <button class="start-primary" onclick="enterApp('rozmowy')">Rozpocznij pracę</button>
                 <button class="start-secondary" id="continue-draft-btn" onclick="continueDraft()" style="display:none">Kontynuuj szkic</button>
                 <button class="start-secondary" onclick="enterApp('dashboard')">Zobacz dashboard</button>
+              </div>
+              <div class="start-welcome-panel" aria-label="Panel powitalny">
+                <div>
+                  <span class="start-welcome-label">Dzień dobry</span>
+                  <strong>Miło Cię widzieć w Oceniatorze.</strong>
+                  <span>Najważniejsze widoki masz pod ręką, a szkice i ewidencja zostają w bieżącej przeglądarce.</span>
+                </div>
+                <div class="start-welcome-stats">
+                  <span><b>3</b> typy ocen</span>
+                  <span><b>1</b> wspólny rejestr</span>
+                </div>
               </div>
             </div>
             <div class="start-panel" aria-label="Skróty startowe">
@@ -178,21 +190,21 @@
 </div>
 
 <!-- JS — load order: defs/state before calc, all modules before main -->
-<script src="js/supabase-config.js"></script>
-<script src="js/dataStore.js"></script>
-<script src="js/defs.js"></script>
-<script src="js/state.js"></script>
-<script src="js/calc.js"></script>
-<script src="js/draft.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/forms.js"></script>
-<script src="js/ewidencja.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/my-team.js"></script>
-<script src="js/raporty.js"></script>
-<script src="js/admin.js"></script>
-<script src="js/seed.js"></script>
-<script src="js/main.js"></script>
+<script src="js/supabase-config.js?v=20260504-admin-teams"></script>
+<script src="js/dataStore.js?v=20260504-admin-teams"></script>
+<script src="js/defs.js?v=20260504-admin-teams"></script>
+<script src="js/state.js?v=20260504-admin-teams"></script>
+<script src="js/calc.js?v=20260504-admin-teams"></script>
+<script src="js/draft.js?v=20260504-admin-teams"></script>
+<script src="js/ui.js?v=20260504-admin-teams"></script>
+<script src="js/forms.js?v=20260504-admin-teams"></script>
+<script src="js/ewidencja.js?v=20260504-admin-teams"></script>
+<script src="js/dashboard.js?v=20260504-admin-teams"></script>
+<script src="js/my-team.js?v=20260504-admin-teams"></script>
+<script src="js/raporty.js?v=20260504-admin-teams"></script>
+<script src="js/admin.js?v=20260504-admin-teams"></script>
+<script src="js/seed.js?v=20260504-admin-teams"></script>
+<script src="js/main.js?v=20260504-admin-teams"></script>
 
 </body>
 </html>

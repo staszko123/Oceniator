@@ -206,6 +206,7 @@ function installDemoData(force){
   }];
   registry = buildDemoRegistry(org);
   normalizeRegistry();
+  normalizeAdminData();
   saveAdminData();
   saveRegistry();
   setDrafts({});

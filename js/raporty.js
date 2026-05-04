@@ -125,24 +125,15 @@ function repPreview(){
     if(pdf){pdf.style.opacity='.45';pdf.style.pointerEvents='none';}
     return;
   }
-  var rows=0, cols=[];
-  if(type==='detail'){
-    rows=filtered.length;
-    cols=['ID','Data','Okres','Typ','Specjalista','Stanowisko','Dział','Oceniający','Kontaktów','Wynik %','Ocena','Status','Sekcja 1 %','Sekcja 2 %','Sekcja 3 %','Uwagi'];
-  } else if(type==='summary'){
-    rows=[].concat(filtered.map(function(e){return e.spec;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).length;
-    cols=['Specjalista','Dział','Stanowisko','Kart','Śr. wynik %','Min %','Max %','Bardzo dobrych','Dobrych','Poniżej stand.','Śr. sek.1 %','Śr. sek.2 %','Śr. sek.3 %'];
-  } else if(type==='trend') {
-    rows=[].concat(filtered.map(function(e){return e.spec+'|'+e.period;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).length;
-    cols=['Specjalista','Dział','Okres','Kart','Śr. wynik %','Bardzo dobrych','Dobrych','Poniżej stand.'];
-  } else {
-    var selectedSpec=document.getElementById('rep-f-spec')?.value||'';
-    rows=selectedSpec?1:[].concat(filtered.map(function(e){return e.spec;})).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).length;
-    cols=['Wynik ogólny','Mocne strony','Obszary do poprawy','Lista ocen','Rekomendacje'];
-  }
+  var data=repPreviewRows(filtered,type);
+  var rows=data.rows.length;
+  var visibleRows=data.rows.slice(0,25);
   prev.innerHTML=
     '<div><strong>'+rows+'</strong> wierszy wynikowych <span style="color:var(--text3);font-size:10px">(z '+filtered.length+' kart po filtrach)</span></div>'+
-    '<div class="rep-preview-cols">Kolumny: '+cols.join(' · ')+'</div>';
+    '<div class="rep-preview-table-wrap"><table class="rep-preview-table"><thead><tr>'+data.cols.map(function(c){return '<th>'+escHtml(c)+'</th>';}).join('')+'</tr></thead><tbody>'+
+    visibleRows.map(function(row){return '<tr>'+row.map(function(v){return '<td>'+escHtml(v==null?'':v)+'</td>';}).join('')+'</tr>';}).join('')+
+    '</tbody></table></div>'+
+    (rows>visibleRows.length?'<div class="rep-preview-note">Pokazano pierwsze '+visibleRows.length+' wierszy. Pełny zakres pobierzesz w CSV.</div>':'');
   if(btn){btn.style.opacity=type==='pdf'?'.45':'1';btn.style.pointerEvents=type==='pdf'?'none':'auto';}
   if(pdf){pdf.style.opacity=type==='pdf'?'1':'.45';pdf.style.pointerEvents=type==='pdf'?'auto':'none';}
 }
@@ -153,6 +144,54 @@ function repCsvVal(v){
 }
 function repRow(arr){return arr.map(repCsvVal).join(',');}
 function repAvg(arr){return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length):'';}
+function repPreviewRows(filtered,type){
+  var TL={r:'Rozmowy',m:'Maile',s:'Systemy'};
+  var RL={great:'Bardzo dobry',good:'Dobry',below:'Poniżej standardu'};
+  var SK={r:['mery','jak','sys'],m:['mery','jak','sys'],s:['obs','dok','eff']};
+  if(type==='detail'){
+    return {
+      cols:['Data','Typ','Specjalista','Dział','Stanowisko','Lider','Kontaktów','Wynik','Ocena','Status'],
+      rows:filtered.slice().sort(function(a,b){return a.data<b.data?1:-1;}).map(function(e){
+        return [e.data||'',TL[e.p]||e.p,e.spec||'',e.dzial||'',e.stand||'',e.oce||'',e.contactCount||'',(e.avgFinal||0)+'%',RL[e.rating]||e.rating,entryStatusLabel(e)];
+      })
+    };
+  }
+  if(type==='summary'||type==='pdf'){
+    var sm={};
+    filtered.forEach(function(e){
+      if(!e.spec) return;
+      if(!sm[e.spec]) sm[e.spec]={dzial:e.dzial||'',stand:e.stand||'',leader:e.oce||'',cards:[]};
+      sm[e.spec].cards.push(e);
+    });
+    return {
+      cols:['Specjalista','Dział','Stanowisko','Lider','Kart','Śr. wynik','Min','Max','Bardzo dobrych','Dobrych','Poniżej std.'],
+      rows:Object.keys(sm).sort().map(function(spec){
+        var d=sm[spec], avgs=d.cards.map(function(c){return c.avgFinal||0;});
+        return [spec,d.dzial,d.stand,d.leader,d.cards.length,repAvg(avgs)+'%',Math.min.apply(null,avgs)+'%',Math.max.apply(null,avgs)+'%',
+          d.cards.filter(function(c){return c.rating==='great';}).length,
+          d.cards.filter(function(c){return c.rating==='good';}).length,
+          d.cards.filter(function(c){return c.rating==='below';}).length];
+      })
+    };
+  }
+  var tm={};
+  filtered.forEach(function(e){
+    if(!e.spec||!e.period) return;
+    var k=e.spec+'||'+e.period;
+    if(!tm[k]) tm[k]={spec:e.spec,dzial:e.dzial||'',period:e.period,cards:[]};
+    tm[k].cards.push(e);
+  });
+  return {
+    cols:['Specjalista','Dział','Okres','Kart','Śr. wynik','Bardzo dobrych','Dobrych','Poniżej std.'],
+    rows:Object.keys(tm).sort().map(function(k){
+      var d=tm[k], avgs=d.cards.map(function(c){return c.avgFinal||0;});
+      return [d.spec,d.dzial,d.period,d.cards.length,repAvg(avgs)+'%',
+        d.cards.filter(function(c){return c.rating==='great';}).length,
+        d.cards.filter(function(c){return c.rating==='good';}).length,
+        d.cards.filter(function(c){return c.rating==='below';}).length];
+    })
+  };
+}
 function repBuildCsv(filtered,type){
   var SEP='\r\n';
   var TL={r:'Rozmowy',m:'Maile',s:'Systemy'};

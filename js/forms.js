@@ -337,12 +337,18 @@ function buildEntry(p){
   const secAvg={};
   DEFS[p].sections.forEach(sec=>{const vals=results.map(r=>r.parts[sec.key]);secAvg[sec.key]=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);});
   const data=document.getElementById(`${p}-data`)?.value||'';
+  const spec=document.getElementById(`${p}-spec`)?.value?.trim()||'';
+  const stand=document.getElementById(`${p}-stand`)?.value||'';
+  const dzial=document.getElementById(`${p}-dzial`)?.value||'';
+  const oce=document.getElementById(`${p}-oce`)?.value||'';
+  const person=(typeof findPersonByAnyName==='function')?findPersonByAnyName(spec):null;
   return{
     id:Date.now(),p,status:'submitted',locked:false,createdAt:new Date().toISOString(),
-    spec:document.getElementById(`${p}-spec`)?.value?.trim()||'',
-    stand:document.getElementById(`${p}-stand`)?.value||'',
-    dzial:document.getElementById(`${p}-dzial`)?.value||'',
-    oce:document.getElementById(`${p}-oce`)?.value||'',
+    spec,stand,dzial,oce,
+    specId:person?String(person.id):(typeof idForAdminItem==='function'?idForAdminItem('specialists',spec):''),
+    leaderId:person&&person.leaderId?person.leaderId:(typeof idForAdminItem==='function'?idForAdminItem('assessors',oce):''),
+    departmentId:person&&person.departmentId?person.departmentId:(typeof idForAdminItem==='function'?idForAdminItem('departments',dzial):''),
+    positionId:person&&person.positionId?person.positionId:(typeof idForAdminItem==='function'?idForAdminItem('positions',stand):''),
     data,period:periodOf(data),avgFinal,secAvg,
     contactResults:results.map(r=>({pct:r.finalPct,pts:r.pts})),
     rating:avgFinal>=92?'great':avgFinal>=82?'good':'below',
