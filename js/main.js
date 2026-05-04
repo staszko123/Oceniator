@@ -36,11 +36,10 @@ updateRoleBadge();
   add('ew-actions-css','css/ewidencja-actions.css');
   add('ew-premium-css','css/ewidencja-premium.css');
   add('forms-ux-css','css/forms-ux-spacing.css');
+  add('spec-search-css','css/specialist-search.css');
 })();
 
-function enterApp(tab){
-  switchTab(tab||'rozmowy');
-}
+function enterApp(tab){switchTab(tab||'rozmowy');}
 
 document.addEventListener('keydown',function(e){
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){
@@ -59,22 +58,9 @@ setInterval(function(){
   });
 },30000);
 
-import('./auth-module.js').then(function(mod){
-  if(mod&&mod.authInit) mod.authInit();
-}).catch(function(err){console.error('Błąd modułu logowania',err);});
-
-import('./hybrid-mode.js').then(function(mod){
-  if(mod&&mod.initHybrid) mod.initHybrid();
-}).catch(function(err){console.error('Błąd hybrid mode',err);});
-
-import('./layout-adjustments.js').then(function(mod){
-  if(mod&&mod.initLayoutAdjustments) mod.initLayoutAdjustments();
-}).catch(function(err){console.error('Błąd layout',err);});
-
-import('./ewidencja-actions.js').then(function(mod){
-  if(mod&&mod.initEwidencjaActions) mod.initEwidencjaActions();
-}).catch(function(err){console.error('Błąd ewidencja actions',err);});
-
-import('./ewidencja-premium.js').then(function(mod){
-  if(mod&&mod.initEwidencjaPremium) mod.initEwidencjaPremium();
-}).catch(function(err){console.error('Błąd ewidencja premium',err);});
+import('./auth-module.js').then(function(mod){if(mod&&mod.authInit) mod.authInit();}).catch(function(err){console.error('Błąd modułu logowania',err);});
+import('./hybrid-mode.js').then(function(mod){if(mod&&mod.initHybrid) mod.initHybrid();}).catch(function(err){console.error('Błąd hybrid mode',err);});
+import('./layout-adjustments.js').then(function(mod){if(mod&&mod.initLayoutAdjustments) mod.initLayoutAdjustments();}).catch(function(err){console.error('Błąd layout',err);});
+import('./ewidencja-actions.js').then(function(mod){if(mod&&mod.initEwidencjaActions) mod.initEwidencjaActions();}).catch(function(err){console.error('Błąd ewidencja actions',err);});
+import('./ewidencja-premium.js').then(function(mod){if(mod&&mod.initEwidencjaPremium) mod.initEwidencjaPremium();}).catch(function(err){console.error('Błąd ewidencja premium',err);});
+import('./specialist-search.js').then(function(mod){if(mod&&mod.initSpecialistSearch) mod.initSpecialistSearch();});
