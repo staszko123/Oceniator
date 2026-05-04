@@ -38,6 +38,7 @@ updateRoleBadge();
   add('forms-ux-css','css/forms-ux-spacing.css');
   add('spec-search-css','css/specialist-search.css');
   add('login-mobile-css','css/login-mobile.css');
+  add('spec-profile-css','css/spec-profile.css');
 })();
 
 function enterApp(tab){switchTab(tab||'rozmowy');}
@@ -65,4 +66,5 @@ import('./layout-adjustments.js').then(function(mod){if(mod&&mod.initLayoutAdjus
 import('./ewidencja-actions.js').then(function(mod){if(mod&&mod.initEwidencjaActions) mod.initEwidencjaActions();}).catch(function(err){console.error('Błąd ewidencja actions',err);});
 import('./ewidencja-premium.js').then(function(mod){if(mod&&mod.initEwidencjaPremium) mod.initEwidencjaPremium();}).catch(function(err){console.error('Błąd ewidencja premium',err);});
 import('./specialist-search.js').then(function(mod){if(mod&&mod.initSpecialistSearch) mod.initSpecialistSearch();});
+import('./spec-profile.js').then(function(mod){if(mod&&mod.initSpecProfile) mod.initSpecProfile();});
 import('./copyright.js').then(function(mod){if(mod&&mod.initCopyright) mod.initCopyright();});
