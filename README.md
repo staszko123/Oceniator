@@ -1,6 +1,6 @@
 # Oceniator
 
-Oceniator to lokalna aplikacja webowa do oceny jakości obsługi w kanałach PeP i P24. System obsługuje karty oceny rozmów, maili oraz działań w systemach, a także ewidencję, dashboardy, raporty i panel administracyjny.
+Oceniator to lokalna aplikacja webowa do oceny jakości obsługi w kanałach telefonicznych i e-mail. System obsługuje karty oceny rozmów, maili oraz działań w systemach, a także ewidencję, dashboardy, raporty i panel administracyjny.
 
 ## Funkcje
 
