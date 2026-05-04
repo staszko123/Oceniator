@@ -64,3 +64,4 @@ import('./layout-adjustments.js').then(function(mod){if(mod&&mod.initLayoutAdjus
 import('./ewidencja-actions.js').then(function(mod){if(mod&&mod.initEwidencjaActions) mod.initEwidencjaActions();}).catch(function(err){console.error('Błąd ewidencja actions',err);});
 import('./ewidencja-premium.js').then(function(mod){if(mod&&mod.initEwidencjaPremium) mod.initEwidencjaPremium();}).catch(function(err){console.error('Błąd ewidencja premium',err);});
 import('./specialist-search.js').then(function(mod){if(mod&&mod.initSpecialistSearch) mod.initSpecialistSearch();});
+import('./copyright.js').then(function(mod){if(mod&&mod.initCopyright) mod.initCopyright();});
