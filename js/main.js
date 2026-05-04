@@ -39,6 +39,7 @@ updateRoleBadge();
   add('spec-search-css','css/specialist-search.css');
   add('login-mobile-css','css/login-mobile.css');
   add('spec-profile-css','css/spec-profile.css');
+  add('skills-css','css/skills.css');
 })();
 
 function enterApp(tab){switchTab(tab||'rozmowy');}
@@ -60,6 +61,7 @@ setInterval(function(){
   });
 },30000);
 
+import('./skills/skill-engine.js').then(function(mod){if(mod&&mod.initSkills) mod.initSkills();}).catch(function(err){console.error('Błąd skilli',err);});
 import('./auth-module.js').then(function(mod){if(mod&&mod.authInit) mod.authInit();}).catch(function(err){console.error('Błąd modułu logowania',err);});
 import('./hybrid-mode.js').then(function(mod){if(mod&&mod.initHybrid) mod.initHybrid();}).catch(function(err){console.error('Błąd hybrid mode',err);});
 import('./layout-adjustments.js').then(function(mod){if(mod&&mod.initLayoutAdjustments) mod.initLayoutAdjustments();}).catch(function(err){console.error('Błąd layout',err);});
