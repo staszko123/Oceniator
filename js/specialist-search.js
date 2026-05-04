@@ -1,9 +1,23 @@
 export function initSpecialistSearch(){
 
   function getPeople(){
-    if(window.adminData?.people?.length) return adminData.people.filter(p=>p.active!==false);
-    const list = (window.getSpecialistOptions?.()||[]).map(n=>({name:n}));
-    return list;
+    let people=[];
+
+    if(window.adminData?.people?.length){
+      people=adminData.people.filter(p=>p.active!==false);
+    }else{
+      people=(window.getSpecialistOptions?.()||[]).map(n=>({name:n}));
+    }
+
+    const role=window.currentRole||'admin';
+    const user=window.currentUser||{};
+
+    if(role==='leader'){
+      const leaderName=(user.name||user.fullName||'').toLowerCase();
+      people=people.filter(p=>((p.leader||'').toLowerCase()===leaderName));
+    }
+
+    return people;
   }
 
   function safeRegExp(v){
