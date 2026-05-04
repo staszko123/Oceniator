@@ -22,7 +22,8 @@ export function initStartDashboard(){
     if(!el){
       el=document.createElement('div');
       el.id='start-extra';
-      el.style.marginTop='16px';
+      el.style.marginTop='20px';
+      el.style.gridColumn='1 / -1';
       wrap.appendChild(el);
     }
 
@@ -42,12 +43,9 @@ export function initStartDashboard(){
     `;
   }
 
-  const observer=new MutationObserver(()=>{
-    const active=document.getElementById('tab-start')?.classList.contains('on');
-    if(active) render();
-  });
+  // HARD FIX: render cykliczny (pewność działania w SPA)
+  setInterval(render,1000);
 
-  observer.observe(document.body,{attributes:true,subtree:true});
-
-  setTimeout(render,500);
+  // pierwszy render
+  setTimeout(render,300);
 }
