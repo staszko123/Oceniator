@@ -1,5 +1,9 @@
 export function initSpecialistSearch(){
 
+  function normalize(v){
+    return String(v||'').toLowerCase().trim();
+  }
+
   function getPeople(){
     let people=[];
 
@@ -9,12 +13,29 @@ export function initSpecialistSearch(){
       people=(window.getSpecialistOptions?.()||[]).map(n=>({name:n}));
     }
 
-    const role=window.currentRole||'admin';
+    const role=normalize(window.currentRole||'admin');
     const user=window.currentUser||{};
 
-    if(role==='leader'){
-      const leaderName=(user.name||user.fullName||'').toLowerCase();
-      people=people.filter(p=>((p.leader||'').toLowerCase()===leaderName));
+    const userName=normalize(user.name||user.fullName||'');
+    const userEmail=normalize(user.email||'');
+
+    if(role.includes('leader') || role.includes('lider')){
+
+      const filtered=people.filter(p=>{
+        const leaderName=normalize(p.leader);
+        const managerName=normalize(p.manager);
+        const leaderEmail=normalize(p.leaderEmail);
+
+        return (
+          leaderName===userName ||
+          managerName===userName ||
+          leaderEmail===userEmail
+        );
+      });
+
+      if(filtered.length){
+        people=filtered;
+      }
     }
 
     return people;
