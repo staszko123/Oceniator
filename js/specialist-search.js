@@ -19,7 +19,11 @@ export function initSpecialistSearch(){
         <div class="spec-avatar">${name.split(' ').map(x=>x[0]).join('').slice(0,2)}</div>
         <div class="spec-main">
           <div class="spec-name">${mark(name)}</div>
-          <div class="spec-meta">${mark(dep)} ${pos?`· ${mark(pos)}`:''}</div>
+          <div class="spec-meta">
+            ${mark(dep)}
+            ${pos?` · ${mark(pos)}`:''}
+            ${lead?` · Lider: ${mark(lead)}`:''}
+          </div>
         </div>
         ${lead?`<div class="spec-pill">${mark(lead)}</div>`:''}
       </button>`;
