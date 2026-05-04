@@ -37,6 +37,7 @@ updateRoleBadge();
   add('ew-premium-css','css/ewidencja-premium.css');
   add('forms-ux-css','css/forms-ux-spacing.css');
   add('spec-search-css','css/specialist-search.css');
+  add('login-mobile-css','css/login-mobile.css');
 })();
 
 function enterApp(tab){switchTab(tab||'rozmowy');}
