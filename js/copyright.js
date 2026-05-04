@@ -1,5 +1,5 @@
 export function initCopyright(){
-  var text='Copyright 2026 Oceniator';
+  var text='Copyright 2026 Oceniator · Jakub Stachura';
 
   if(!document.getElementById('oc-copyright-style')){
     var style=document.createElement('style');
