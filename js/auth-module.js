@@ -93,6 +93,7 @@ export function authInit(){
     const res=await sb.from('profiles').select('id,full_name,email,role,leader_scope,is_active').eq('id',user.id).single();
     if(res.error) throw res.error;
     if(res.data&&res.data.is_active===false) throw new Error('Konto jest nieaktywne.');
+    if(!res.data) throw new Error('Profil nie znaleziony — skontaktuj się z administratorem.');
     return res.data;
   }
 
@@ -103,7 +104,12 @@ export function authInit(){
       return;
     }
     try{
-      const profile=await loadSupabaseProfile(sb,session.user);
+      // Timeout na pobieranie profilu
+      const profilePromise = loadSupabaseProfile(sb,session.user);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: Supabase nie odpowiada (5s)')), 5000)
+      );
+      const profile = await Promise.race([profilePromise, timeoutPromise]);
       const old=document.getElementById('oc-login-screen');
       if(old) old.remove();
       applySupabaseProfile(profile,session.user);
@@ -112,7 +118,9 @@ export function authInit(){
       console.warn('[Auth] Profil Supabase:',e);
       await sb.auth.signOut();
       setUnauthenticated();
-      supabaseLoginUI('Nie udało się pobrać aktywnego profilu użytkownika.');
+      var msg = e.message || 'Nie udało się pobrać profilu.';
+      if(msg.indexOf('Timeout') >= 0) msg += ' Spróbuj ponownie.';
+      supabaseLoginUI(msg);
     }
   }
 
@@ -242,6 +250,8 @@ export function authInit(){
   }
 
   function users(){
+    // W trybie Supabase nie używamy lokalnych kont — zwracamy fallback
+    if(DataStore.isRemote&&DataStore.isRemote()) return [];
     let u=safeJson(usersKey,null);
     if(!u){
       u=[
@@ -253,11 +263,16 @@ export function authInit(){
       ];
     }
     u=mergeUsers(u);
-    DataStore.setValue(usersKey,JSON.stringify(u));
+    // Zapisuj lokalnie tylko w trybie niedalekom
+    if(!DataStore.isRemote||!DataStore.isRemote()) DataStore.setValue(usersKey,JSON.stringify(u));
     return u;
   }
 
-  function session(){return safeJson(sessionKey,null);}
+  function session(){
+    // W trybie Supabase sesja zarządzana jest przez Auth — zwracamy null
+    if(DataStore.isRemote&&DataStore.isRemote()) return null;
+    return safeJson(sessionKey,null);
+  }
 
   function injectStyle(){
     if(document.getElementById('oc-login-style')) return;
@@ -338,12 +353,14 @@ export function authInit(){
       if(er) er.style.display='block';
       return;
     }
-    DataStore.setValue(sessionKey,JSON.stringify({id:u.id}));
+    // Zapisuj sesję lokalnie tylko poza trybem Supabase
+    if(!DataStore.isRemote||!DataStore.isRemote()) DataStore.setValue(sessionKey,JSON.stringify({id:u.id}));
     location.reload();
   };
 
   window.authLogout=function(){
-    DataStore.setValue(sessionKey,null);
+    // Wyczyść sesję lokalnie poza trybem Supabase
+    if(!DataStore.isRemote||!DataStore.isRemote()) DataStore.setValue(sessionKey,null);
     location.reload();
   };
 

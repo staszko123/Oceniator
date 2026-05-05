@@ -25,6 +25,32 @@ var DataStore = (function(){
     return !!(c.enabled && c.url && c.anonKey && window.supabase);
   }
 
+  // ── Cache layer dla Supabase fallback ──
+  var cache = {
+    profiles: { data: null, ts: 0 },
+    admin: { data: null, ts: 0 },
+    registry: { data: null, ts: 0 }
+  };
+  var CACHE_TTL = 300000; // 5 minut
+
+  function isCacheValid(key){
+    return cache[key] && cache[key].data && (Date.now() - cache[key].ts) < CACHE_TTL;
+  }
+
+  function setCache(key, data){
+    cache[key] = { data: data, ts: Date.now() };
+  }
+
+  function getCache(key){
+    return isCacheValid(key) ? cache[key].data : null;
+  }
+
+  function isSupabaseHealthy(){
+    if(!remoteEnabled()) return false;
+    // Prosty healthcheck — czy można się połączyć
+    return !!(window._sb && window._sb.auth);
+  }
+
   function readJson(key, fallback){
     try{
       var raw = localStorage.getItem(key);
@@ -154,15 +180,37 @@ var DataStore = (function(){
   // ── Pobierz registry z Supabase (async) ──
   function fetchRegistryFromSupabase(){
     if(!remoteEnabled()) return Promise.resolve(null);
+    
+    // Zwróć cache jeśli jest ważny
+    var cached = getCache('registry');
+    if(cached) return Promise.resolve(cached);
+    
     return window._sb
       .from('assessments')
       .select('*')
       .order('assessment_date', {ascending: false})
       .then(function(res){
         if(res.error){ console.warn('[DataStore] fetchRegistry:', res.error.message); return null; }
-        return (res.data || []).map(rowToEntry);
+        var data = (res.data || []).map(rowToEntry);
+        setCache('registry', data);
+        writeJson('pep_supabase_registry_backup', data);
+        return data;
       })
-      .catch(function(e){ console.warn('[DataStore] fetchRegistry wyjątek:', e); return null; });
+      .catch(function(e){ 
+        console.warn('[DataStore] Nie udało się pobrać kart z Supabase:', e.message);
+        // Fallback do cache
+        if(cache.registry.data) {
+          console.log('[DataStore] Używam cache kart (offline/timeout)');
+          return cache.registry.data;
+        }
+        // Fallback do localStorage
+        var localBackup = readJson('pep_supabase_registry_backup', null);
+        if(localBackup) {
+          console.log('[DataStore] Fallback do localStorage kart');
+          return localBackup;
+        }
+        return null;
+      });
   }
 
   // ── Wypchnij registry do Supabase (async, upsert) ──
@@ -192,6 +240,11 @@ var DataStore = (function(){
   // ── Pobierz adminData z Supabase (async) ──
   function fetchAdminFromSupabase(){
     if(!remoteEnabled()) return Promise.resolve(null);
+    
+    // Zwróć cache jeśli jest ważny
+    var cached = getCache('admin');
+    if(cached) return Promise.resolve(cached);
+    
     return Promise.all([
       window._sb.from('goals').select('*').eq('id','00000000-0000-0000-0000-000000000001').single(),
       window._sb.from('specialists').select('*').order('sort_order'),
@@ -207,7 +260,7 @@ var DataStore = (function(){
       var periods  = results[4].data || [];
       var history  = results[5].data || [];
 
-      return {
+      var adminData = {
         goals: goals ? {
           callsPerPeriod:   goals.calls_per_period,
           mailsPerPeriod:   goals.mails_per_period,
@@ -228,18 +281,58 @@ var DataStore = (function(){
           return { desc: h.description, ts: h.changed_at };
         })
       };
-    }).catch(function(e){ console.warn('[DataStore] fetchAdmin:', e); return null; });
+      
+      setCache('admin', adminData);
+      writeJson('pep_supabase_admin_backup', adminData);
+      return adminData;
+    }).catch(function(e){ 
+      console.warn('[DataStore] Nie udało się pobrać config z Supabase:', e.message);
+      // Fallback do cache
+      if(cache.admin.data) {
+        console.log('[DataStore] Używam cache config (offline/timeout)');
+        return cache.admin.data;
+      }
+      // Fallback do localStorage
+      var localBackup = readJson('pep_supabase_admin_backup', null);
+      if(localBackup) {
+        console.log('[DataStore] Fallback do localStorage config');
+        return localBackup;
+      }
+      return null;
+    });
   }
 
   function fetchProfilesFromSupabase(){
     if(!remoteEnabled()) return Promise.resolve([]);
+    
+    // Najpierw zwróć cache jeśli jest ważny
+    var cached = getCache('profiles');
+    if(cached) return Promise.resolve(cached);
+    
     return window._sb
       .from('profiles')
       .select('id,email,full_name,role,leader_scope,is_active,created_at,updated_at')
       .order('email', {ascending: true})
       .then(function(res){
         if(res.error) throw res.error;
-        return res.data || [];
+        var data = res.data || [];
+        setCache('profiles', data);
+        return data;
+      })
+      .catch(function(e){
+        console.warn('[DataStore] Nie udało się pobrać profili z Supabase:', e.message);
+        // Fallback do cache starszego niż TTL
+        if(cache.profiles.data) {
+          console.log('[DataStore] Używam cache profili (offline/timeout)');
+          return cache.profiles.data;
+        }
+        // Ostatni fallback — próba czytania z localStorage
+        var localBackup = readJson('pep_supabase_profiles_backup', []);
+        if(localBackup.length) {
+          console.log('[DataStore] Fallback do localStorage profili');
+          return localBackup;
+        }
+        return [];
       });
   }
 
@@ -400,12 +493,10 @@ var DataStore = (function(){
 
     // ── Registry ──
     loadRegistry: function(){
-      var local = remoteEnabled() ? [] : readJson(keys.registry, []);
-      // Załaduj z Supabase w tle i zaktualizuj jeśli jest różnica
+      // W trybie Supabase zwracamy pusty fallback; dane pojawią się asynchronicznie
       if(remoteEnabled()){
         fetchRegistryFromSupabase().then(function(remote){
           if(!remote) return;
-          // Odśwież widok jeśli registry jest globalny
           if(window.registry !== undefined && typeof normalizeRegistry === 'function'){
             window.registry = remote;
             normalizeRegistry();
@@ -413,8 +504,10 @@ var DataStore = (function(){
             if(typeof updateBadge === 'function') updateBadge();
           }
         });
+        return [];
       }
-      return local;
+      // W trybie lokalnym czytaj z localStorage
+      return readJson(keys.registry, []);
     },
 
     saveRegistry: function(data){
@@ -426,26 +519,20 @@ var DataStore = (function(){
 
     // ── Admin data ──
     loadAdmin: function(fallback){
-      var local = remoteEnabled() ? (fallback || null) : readJson(keys.admin, fallback || null);
+      // W trybie Supabase zwracamy fallback; dane pobieramy asynchronicznie z bazy
       if(remoteEnabled()){
         fetchAdminFromSupabase().then(function(remote){
           if(!remote) return;
-          // Scalamy: Supabase nadpisuje tylko pola które ma
-          var merged = Object.assign({}, local || {});
-          if(remote.goals)       merged.goals       = Object.assign({}, merged.goals||{}, remote.goals);
-          if(remote.specialists) merged.specialists  = remote.specialists;
-          if(remote.departments) merged.departments  = remote.departments;
-          if(remote.positions)   merged.positions    = remote.positions;
-          if(remote.people)      merged.people       = remote.people;
-          if(remote.periods && remote.periods.length) merged.periods = remote.periods;
-          if(remote.history)     merged.history      = remote.history;
+          // W trybie zdalnym dane z Supabase całkowicie zastępują lokalne
           if(window.adminData !== undefined){
-            Object.assign(window.adminData, merged);
+            Object.assign(window.adminData, remote);
             if(typeof normalizeAdminData === 'function') normalizeAdminData();
           }
         });
+        return fallback || null;
       }
-      return local;
+      // W trybie lokalnym czytaj z localStorage
+      return readJson(keys.admin, fallback || null);
     },
 
     saveAdmin: function(data){

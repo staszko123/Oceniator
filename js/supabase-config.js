@@ -2,6 +2,10 @@
    SUPABASE CONFIG
    Uzupełnij wartości po utworzeniu projektu Supabase.
    Przy pustych wartościach aplikacja działa lokalnie przez localStorage.
+   
+   TRYBY PRACY:
+   - enabled: true  → Supabase Auth + tabele zdalnie, konta z bazy, sesje w Auth
+   - enabled: false → Akta lokalne w localStorage, konta demo, sesje w przeglądarce
 ══════════════════════════════════════════════ */
 
 window.OCENIATOR_SUPABASE = {
@@ -18,6 +22,9 @@ window.OCENIATOR_SUPABASE = {
       window._sb = window.supabase.createClient(c.url, c.anonKey, {
         auth: { persistSession: true, autoRefreshToken: true }
       });
+      console.log('[Supabase] Klient inicjalizowany — tryb zdalny aktywny');
+    } else {
+      console.log('[Supabase] Wyłączony — aplikacja pracuje lokalnie');
     }
   }catch(e){
     console.warn('[Supabase] Błąd inicjalizacji klienta:', e);

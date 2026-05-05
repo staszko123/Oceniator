@@ -268,6 +268,8 @@ function can(action){
 }
 function roleLabel(){return {admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'}[activeRole()]||'Administrator';}
 function currentUser(){
+  // W trybie Supabase sesja zarządzana jest przez Auth, nie localStorage
+  if(DataStore.isRemote && DataStore.isRemote()) return window.currentUserData || null;
   try{
     var session=JSON.parse(DataStore.getValue('oc_session_v1','null')||'null');
     if(!session) return null;

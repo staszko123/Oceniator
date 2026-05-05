@@ -561,6 +561,8 @@ function admSaveUsers(users){
 }
 var admProfilesCache=null;
 var admProfilesLoading=false;
+var admProfilesPage=0; // dla lazy loading
+var admProfilesPerPage=50; // rozmiar strony
 function admCreateProfileHtml(roleOpts){
   if(!DataStore.createProfile) return '';
   var leaders=getActiveAdminItems('assessors');
@@ -587,26 +589,36 @@ function admProfilesHtml(roleOpts){
     DataStore.fetchProfiles().then(function(rows){
       admProfilesCache=rows||[];
       admProfilesLoading=false;
+      admProfilesPage=0;
       buildAdmin();
     }).catch(function(e){
       console.warn('[Admin] Profile Supabase:',e);
       admProfilesLoading=false;
       admProfilesCache=[];
       buildAdmin();
-      showToast('Nie udało się pobrać profili użytkowników','err');
+      showToast('Nie udało się pobrać profili — używam cache','warn');
     });
   }
   if(admProfilesLoading || !admProfilesCache){
     return '<div class="adm-empty">Ładowanie profili Supabase...</div>';
   }
   var leaders=getActiveAdminItems('assessors');
+  var isOffline = (admProfilesCache && admProfilesCache.length === 0);
+  var supabaseInfo='<div class="adm-item-sub" style="margin-bottom:12px">Supabase Auth i tabela <code>profiles</code> zarządzają logowaniem, rolami i dostępem. Konto musi istnieć w Auth i w profilu.'+(isOffline?' <strong style="color:#d97706">[OFFLINE — cache]</strong>':'')+'</div>';
   var roleSelect=function(id,role){
     return '<select id="adm-prof-role-'+id+'">'+Object.keys(roleOpts).map(function(k){return '<option value="'+k+'" '+(role===k?'selected':'')+'>'+roleOpts[k]+'</option>';}).join('')+'</select>';
   };
   var scopeSelect=function(id,scope){
     return '<select id="adm-prof-scope-'+id+'"><option value="">Brak zakresu</option>'+leaders.map(function(name){return '<option value="'+escHtml(name)+'" '+(String(scope||'')===String(name)?'selected':'')+'>'+escHtml(name)+'</option>';}).join('')+'</select>';
   };
-  var rows=admProfilesCache.map(function(p){
+  
+  // Lazy loading - paginate profili
+  var start = admProfilesPage * admProfilesPerPage;
+  var pageProfiles = admProfilesCache.slice(start, start + admProfilesPerPage);
+  var totalPages = Math.ceil(admProfilesCache.length / admProfilesPerPage);
+  var hasMore = admProfilesPage < totalPages - 1;
+  
+  var rows=pageProfiles.map(function(p){
     var id=String(p.id);
     var arg=JSON.stringify(id);
     return '<tr>'+
@@ -618,14 +630,21 @@ function admProfilesHtml(roleOpts){
       '<td class="r"><button class="adm-btn" onclick="admSaveProfile('+arg+')">Zapisz</button></td>'+
     '</tr>';
   }).join('');
-  return admCreateProfileHtml(roleOpts)+'<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Email</th><th>Nazwa</th><th>Rola</th><th>Zakres lidera</th><th>Status</th><th></th></tr></thead><tbody>'+
+  
+  var pagination = admProfilesCache.length > admProfilesPerPage 
+    ? '<div class="adm-pagination" style="margin-top:10px;display:flex;gap:8px;align-items:center;justify-content:center"><button class="btn btn-outline btn-sm" onclick="admProfilesPage=Math.max(0,admProfilesPage-1);buildAdmin()" '+(!admProfilesPage?'disabled':'')+'>← Poprz.</button><span style="font-size:11px;color:var(--text3)">Strona '+(admProfilesPage+1)+' z '+totalPages+' ('+admProfilesCache.length+' kont)</span><button class="btn btn-outline btn-sm" onclick="admProfilesPage=Math.min('+Math.max(0,totalPages-1)+',admProfilesPage+1);buildAdmin()" '+(admProfilesPage>=totalPages-1?'disabled':'')+'>Dalej →</button></div>'
+    : '';
+
+  return supabaseInfo + admCreateProfileHtml(roleOpts)+'<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Email</th><th>Nazwa</th><th>Rola</th><th>Zakres lidera</th><th>Status</th><th></th></tr></thead><tbody>'+
     (rows||'<tr><td colspan="6"><div class="adm-empty">Brak profili. Użytkownik pojawi się tu po pierwszym logowaniu lub po utworzeniu w Supabase Auth.</div></td></tr>')+
     '</tbody></table></div>'+
-    '<div class="adm-user-add"><button class="btn btn-outline btn-sm" onclick="admReloadProfiles()">Odśwież profile</button><div class="adm-item-sub" style="margin-top:8px">Oceniator zarządza profilem, rolą, zakresem i aktywnością kont Supabase.</div></div>';
+    pagination+
+    '<div class="adm-user-add"><button class="btn btn-outline btn-sm" onclick="admReloadProfiles()">Odśwież profile</button><div class="adm-item-sub" style="margin-top:8px">Oceniator zarządza profilem, rolą, zakresem i aktywnością kont Supabase. W trybie offline: dane z cache.</div></div>';
 }
 function admReloadProfiles(){
   admProfilesCache=null;
   admProfilesLoading=false;
+  admProfilesPage=0;
   buildAdmin();
 }
 async function admSaveProfile(id){
@@ -686,10 +705,17 @@ async function admCreateProfile(){
     showToast('Nie udało się utworzyć konta. Sprawdź Edge Function admin-users.','err');
   }
 }
+function admUserAccountsHeader(){
+  if(DataStore.isRemote && DataStore.isRemote()){
+    return '<div class="adm-section-head"><div><h3>Konta Supabase</h3><p>Zarządzaj kontami użytkowników w Supabase Auth oraz powiązanymi profilami w tabeli <code>profiles</code>. Role, zakresy i aktywność są pobierane z bazy.</p></div></div>';
+  }
+  return '<div class="adm-section-head"><div><h3>Konta lokalne</h3><p>W trybie lokalnym używane są demo konta zapisane wyłącznie w tej przeglądarce. Ten tryb służy tylko do testów, a nie do produkcji.</p></div></div>';
+}
 function admUsersHtml(roleOpts){
   if(DataStore.isRemote && DataStore.isRemote()) return admProfilesHtml(roleOpts);
   var users=admUsers();
   var leaders=getActiveAdminItems('assessors');
+  var localInfo='<div class="adm-item-sub" style="margin-bottom:12px">W tym trybie działają lokalne konta demo zapisane w przeglądarce. Użyj ich tylko do testów; nie są powiązane z Supabase Auth.</div>';
   var roleSelect=function(id,role){
     return '<select id="adm-user-role-'+id+'">'+Object.keys(roleOpts).map(function(k){return '<option value="'+k+'" '+(role===k?'selected':'')+'>'+roleOpts[k]+'</option>';}).join('')+'</select>';
   };
@@ -703,7 +729,7 @@ function admUsersHtml(roleOpts){
       '<td>'+roleSelect(u.id,u.r)+'</td><td>'+leaderSelect(u.id,u.leaderId)+'</td>'+
       '<td class="r"><button class="adm-btn" onclick="admSaveUser('+u.id+')">Zapisz</button><button class="adm-btn del" onclick="admDeleteUser('+u.id+')">Usuń</button></td></tr>';
   }).join('');
-  return '<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Login</th><th>Nazwa</th><th>Hasło</th><th>Rola</th><th>Lider / zakres</th><th></th></tr></thead><tbody>'+
+  return localInfo + '<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Login</th><th>Nazwa</th><th>Hasło</th><th>Rola</th><th>Lider / zakres</th><th></th></tr></thead><tbody>'+
     (rows||'<tr><td colspan="6"><div class="adm-empty">Brak kont użytkowników.</div></td></tr>')+
     '</tbody></table></div><div class="adm-user-add"><button class="btn btn-primary btn-sm" onclick="admAddUser()">Dodaj konto</button></div>';
 }
@@ -963,7 +989,7 @@ function buildAdmin(){
   h+='</section>';
 
   h+='<section class="adm-section">';
-  h+='<div class="adm-section-head"><div><h3>Użytkownicy i konta</h3><p>Login, hasło, rola oraz zakres lidera są konfigurowane w jednym miejscu.</p></div></div>';
+  h+=admUserAccountsHeader();
   h+=admUsersHtml(roleOpts);
   h+='</section>';
   h+=admSupabaseToolsHtml();
