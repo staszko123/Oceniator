@@ -12,13 +12,16 @@ function optsHtml(items,sel){
   return '<option value="">— wybierz —</option>'+items.map(function(v){return '<option value="'+escHtml(v)+'" '+(v===sel?'selected':'')+'>'+escHtml(v)+'</option>';}).join('');
 }
 function getSpecStats(spec){
-  var n=registry.filter(function(e){return e.spec===spec;}).length;
+  var scoped=typeof scopedRegistry==='function'?scopedRegistry():registry;
+  var rows=scoped.filter(function(e){return e.spec===spec;});
+  var n=rows.length;
   if(!n) return 'Brak kart';
-  var avg=Math.round(registry.filter(function(e){return e.spec===spec;}).reduce(function(a,b){return a+b.avgFinal;},0)/n);
+  var avg=Math.round(rows.reduce(function(a,b){return a+b.avgFinal;},0)/n);
   return n+' kart · śr. '+avg+'%';
 }
 function getAssessorStats(oce){
-  var n=registry.filter(function(e){return e.oce===oce;}).length;
+  var scoped=typeof scopedRegistry==='function'?scopedRegistry():registry;
+  var n=scoped.filter(function(e){return e.oce===oce;}).length;
   return n?n+' ocen':'Brak ocen';
 }
 function loadAdminData(){
@@ -473,6 +476,54 @@ function admExport(){
   }catch(e){showToast('Błąd eksportu','err');}
 }
 
+function admSupabaseToolsHtml(){
+  if(!DataStore.isRemote || !DataStore.isRemote()) return '';
+  var st=DataStore.localMigrationStatus?DataStore.localMigrationStatus():{registryCount:0,hasAdmin:false,hasUsers:false,hasLocalSession:false};
+  if(!st.registryCount && !st.hasAdmin && !st.hasUsers && !st.hasLocalSession) return '';
+  return '<section class="adm-section"><div class="adm-section-head"><div><h3>Supabase i migracja</h3><p>Jednorazowo przenies stare dane z tej przegladarki do Supabase, a potem usun lokalne kopie produkcyjne.</p></div></div>'+
+    '<div class="adm-bottom-grid">'+
+      '<div class="adm-history">'+
+        '<div class="adm-item"><div><div class="adm-item-name">Lokalne karty: '+st.registryCount+'</div><div class="adm-item-sub">Zrodlo: pep_registry_v5 w tej przegladarce.</div></div></div>'+
+        '<div class="adm-item"><div><div class="adm-item-name">Lokalna konfiguracja: '+(st.hasAdmin?'tak':'nie')+'</div><div class="adm-item-sub">Zrodlo: pep_admin_v1.</div></div></div>'+
+        '<div class="adm-item"><div><div class="adm-item-name">Lokalne konta demo: '+(st.hasUsers?'tak':'nie')+'</div><div class="adm-item-sub">Po przejsciu na Supabase Auth mozna je usunac.</div></div></div>'+
+      '</div>'+
+      '<div class="adm-history">'+
+        '<button class="btn btn-primary btn-sm" onclick="admMigrateLocalToSupabase()" '+(!can('adminConfig')?'disabled':'')+'>Migruj lokalne dane do Supabase</button>'+
+        '<button class="btn btn-outline btn-sm" onclick="admClearLocalProductionData()" '+(!can('adminConfig')?'disabled':'')+' style="margin-left:8px">Wyczysc lokalne kopie</button>'+
+        '<div class="adm-item-sub" style="margin-top:10px">Szkice formularzy, motyw i ustawienia interfejsu zostaja lokalnie.</div>'+
+      '</div>'+
+    '</div></section>';
+}
+async function admMigrateLocalToSupabase(){
+  if(!can('adminConfig')){showToast('Brak uprawnien','warn');return;}
+  if(!DataStore.migrateLocalToSupabase){showToast('Migracja nie jest dostepna','warn');return;}
+  if(!confirm('Przeniesc lokalne karty i konfiguracje z tej przegladarki do Supabase?')) return;
+  try{
+    var res=await DataStore.migrateLocalToSupabase();
+    if(DataStore.fetchRegistry){
+      var remote=await DataStore.fetchRegistry();
+      if(Array.isArray(remote)){registry=remote;normalizeRegistry();}
+    }
+    if(DataStore.fetchAdmin){
+      var remoteAdmin=await DataStore.fetchAdmin();
+      if(remoteAdmin){Object.assign(adminData,remoteAdmin);normalizeAdminData();}
+    }
+    buildAdmin();renderEw();if(typeof updateBadge==='function')updateBadge();
+    showToast('Migracja zakonczona: '+(res.registryCount||0)+' kart','ok');
+  }catch(e){
+    console.warn('[Admin] Migracja Supabase:',e);
+    showToast('Migracja nie powiodla sie. Sprawdz konsole i RLS.','err');
+  }
+}
+function admClearLocalProductionData(){
+  if(!can('adminConfig')){showToast('Brak uprawnien','warn');return;}
+  if(!DataStore.clearLocalProductionData){showToast('Czyszczenie nie jest dostepne','warn');return;}
+  if(!confirm('Usunac lokalne kopie kart, konfiguracji i kont demo z tej przegladarki? Upewnij sie, ze migracja do Supabase juz dziala.')) return;
+  DataStore.clearLocalProductionData();
+  buildAdmin();
+  showToast('Lokalne kopie produkcyjne wyczyszczone','ok');
+}
+
 function admSetRole(role){
   normalizeAdminData();
   adminData.access.role=role;
@@ -508,7 +559,135 @@ function admSaveUsers(users){
     if(cur){window.currentUserData=cur;adminData.access.role=cur.r;saveAdminData();updateRoleBadge();}
   }
 }
+var admProfilesCache=null;
+var admProfilesLoading=false;
+function admCreateProfileHtml(roleOpts){
+  if(!DataStore.createProfile) return '';
+  var leaders=getActiveAdminItems('assessors');
+  var roleOptions=Object.keys(roleOpts).map(function(k){return '<option value="'+k+'" '+(k==='viewer'?'selected':'')+'>'+roleOpts[k]+'</option>';}).join('');
+  var scopeOptions='<option value="">Brak zakresu</option>'+leaders.map(function(name){return '<option value="'+escHtml(name)+'">'+escHtml(name)+'</option>';}).join('');
+  return '<div class="adm-create-user" style="border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:12px;margin-bottom:12px">'+
+    '<div class="adm-section-head" style="padding:0;margin-bottom:10px"><div><h4>Dodaj konto Supabase</h4><p>Admin tworzy konto Auth i profil w jednym kroku. Bez hasła zostanie wysłane zaproszenie email.</p></div></div>'+
+    '<div class="adm-grid compact">'+
+      '<label class="rep-flbl">Email<input class="adm-search" id="adm-new-email" type="email" placeholder="email@firma.pl"></label>'+
+      '<label class="rep-flbl">Imię i nazwisko<input class="adm-search" id="adm-new-name" type="text" placeholder="Nazwa użytkownika"></label>'+
+      '<label class="rep-flbl">Rola<select class="rep-sel" id="adm-new-role">'+roleOptions+'</select></label>'+
+      '<label class="rep-flbl">Zakres lidera<select class="rep-sel" id="adm-new-scope">'+scopeOptions+'</select></label>'+
+      '<label class="rep-flbl">Hasło tymczasowe<input class="adm-search" id="adm-new-password" type="password" placeholder="opcjonalnie"></label>'+
+    '</div>'+
+    '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="admCreateProfile()">Dodaj konto</button><span class="adm-item-sub">Wymaga wdrożonej funkcji Supabase Edge: admin-users.</span></div>'+
+  '</div>';
+}
+function admProfilesHtml(roleOpts){
+  if(!DataStore.fetchProfiles){
+    return '<div class="adm-empty">Integracja profili Supabase jest niedostępna.</div>';
+  }
+  if(!admProfilesCache && !admProfilesLoading){
+    admProfilesLoading=true;
+    DataStore.fetchProfiles().then(function(rows){
+      admProfilesCache=rows||[];
+      admProfilesLoading=false;
+      buildAdmin();
+    }).catch(function(e){
+      console.warn('[Admin] Profile Supabase:',e);
+      admProfilesLoading=false;
+      admProfilesCache=[];
+      buildAdmin();
+      showToast('Nie udało się pobrać profili użytkowników','err');
+    });
+  }
+  if(admProfilesLoading || !admProfilesCache){
+    return '<div class="adm-empty">Ładowanie profili Supabase...</div>';
+  }
+  var leaders=getActiveAdminItems('assessors');
+  var roleSelect=function(id,role){
+    return '<select id="adm-prof-role-'+id+'">'+Object.keys(roleOpts).map(function(k){return '<option value="'+k+'" '+(role===k?'selected':'')+'>'+roleOpts[k]+'</option>';}).join('')+'</select>';
+  };
+  var scopeSelect=function(id,scope){
+    return '<select id="adm-prof-scope-'+id+'"><option value="">Brak zakresu</option>'+leaders.map(function(name){return '<option value="'+escHtml(name)+'" '+(String(scope||'')===String(name)?'selected':'')+'>'+escHtml(name)+'</option>';}).join('')+'</select>';
+  };
+  var rows=admProfilesCache.map(function(p){
+    var id=String(p.id);
+    var arg=JSON.stringify(id);
+    return '<tr>'+
+      '<td><strong>'+escHtml(p.email||'')+'</strong><div class="adm-item-sub">'+escHtml(id)+'</div></td>'+
+      '<td><input id="adm-prof-name-'+id+'" value="'+escHtml(p.full_name||'')+'" placeholder="Imię i nazwisko"></td>'+
+      '<td>'+roleSelect(id,p.role||'viewer')+'</td>'+
+      '<td>'+scopeSelect(id,p.leader_scope||'')+'</td>'+
+      '<td><label class="perm-cell"><input type="checkbox" id="adm-prof-active-'+id+'" '+(p.is_active!==false?'checked':'')+'> Aktywny</label></td>'+
+      '<td class="r"><button class="adm-btn" onclick="admSaveProfile('+arg+')">Zapisz</button></td>'+
+    '</tr>';
+  }).join('');
+  return admCreateProfileHtml(roleOpts)+'<div class="adm-table-wrap"><table class="org-table adm-users-table"><thead><tr><th>Email</th><th>Nazwa</th><th>Rola</th><th>Zakres lidera</th><th>Status</th><th></th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="6"><div class="adm-empty">Brak profili. Użytkownik pojawi się tu po pierwszym logowaniu lub po utworzeniu w Supabase Auth.</div></td></tr>')+
+    '</tbody></table></div>'+
+    '<div class="adm-user-add"><button class="btn btn-outline btn-sm" onclick="admReloadProfiles()">Odśwież profile</button><div class="adm-item-sub" style="margin-top:8px">Oceniator zarządza profilem, rolą, zakresem i aktywnością kont Supabase.</div></div>';
+}
+function admReloadProfiles(){
+  admProfilesCache=null;
+  admProfilesLoading=false;
+  buildAdmin();
+}
+async function admSaveProfile(id){
+  if(!can('adminConfig')) return;
+  var profile={
+    id:id,
+    full_name:(document.getElementById('adm-prof-name-'+id)?.value||'').trim(),
+    role:document.getElementById('adm-prof-role-'+id)?.value||'viewer',
+    leader_scope:document.getElementById('adm-prof-scope-'+id)?.value||'',
+    is_active:!!document.getElementById('adm-prof-active-'+id)?.checked
+  };
+  try{
+    var saved=await DataStore.updateProfile(profile);
+    if(DataStore.fetchProfiles){
+      admProfilesCache=await DataStore.fetchProfiles();
+      saved=(admProfilesCache||[]).find(function(p){return String(p.id)===String(id);})||saved;
+    }else{
+      admProfilesCache=(admProfilesCache||[]).map(function(p){return String(p.id)===String(id)?saved:p;});
+    }
+    if(window.currentUserData && String(window.currentUserData.id)===String(id)){
+      window.currentUserData.n=saved.full_name||saved.email||'';
+      window.currentUserData.r=saved.role||'viewer';
+      window.currentUserData.leaderScope=saved.leader_scope||'';
+      window.currentUserData.leaderId=saved.leader_scope?idForAdminItem('assessors',saved.leader_scope):'';
+      adminData.access.role=window.currentUserData.r;
+      updateRoleBadge();
+    }
+    logChange('Użytkownicy','Zmieniono profil: '+(saved.email||id));
+    buildAdmin();
+    showToast('Profil zapisany: '+(saved.role||profile.role),'ok');
+  }catch(e){
+    console.warn('[Admin] Zapis profilu:',e);
+    var msg=(e&&e.message)?e.message:String(e||'Nieznany błąd');
+    showToast('Nie udało się zapisać profilu: '+msg,'err');
+  }
+}
+async function admCreateProfile(){
+  if(!can('adminConfig')) return;
+  var email=(document.getElementById('adm-new-email')?.value||'').trim();
+  var password=document.getElementById('adm-new-password')?.value||'';
+  var profile={
+    email:email,
+    password:password,
+    full_name:(document.getElementById('adm-new-name')?.value||'').trim(),
+    role:document.getElementById('adm-new-role')?.value||'viewer',
+    leader_scope:document.getElementById('adm-new-scope')?.value||'',
+    is_active:true
+  };
+  if(!email || email.indexOf('@')<1){showToast('Podaj poprawny email.','err');return;}
+  if(password && password.length<8){showToast('Hasło musi mieć minimum 8 znaków.','err');return;}
+  try{
+    await DataStore.createProfile(profile);
+    admProfilesCache=null;
+    buildAdmin();
+    showToast('Konto zostało utworzone.','ok');
+  }catch(e){
+    console.warn('[Admin] Tworzenie konta Supabase:',e);
+    showToast('Nie udało się utworzyć konta. Sprawdź Edge Function admin-users.','err');
+  }
+}
 function admUsersHtml(roleOpts){
+  if(DataStore.isRemote && DataStore.isRemote()) return admProfilesHtml(roleOpts);
   var users=admUsers();
   var leaders=getActiveAdminItems('assessors');
   var roleSelect=function(id,role){
@@ -784,13 +963,12 @@ function buildAdmin(){
   h+='</section>';
 
   h+='<section class="adm-section">';
-  h+='<div class="adm-section-head"><div><h3>Zespoły liderów</h3><p>Każdy lider jest oceniającym i widzi po zalogowaniu tylko swój zespół.</p></div><button class="btn btn-outline btn-sm" onclick="loadSeedData()">Wczytaj demo</button></div>';
-  h+='';
   h+='<div class="adm-section-head"><div><h3>Użytkownicy i konta</h3><p>Login, hasło, rola oraz zakres lidera są konfigurowane w jednym miejscu.</p></div></div>';
   h+=admUsersHtml(roleOpts);
   h+='</section>';
+  h+=admSupabaseToolsHtml();
 
-  h+='<section class="adm-section"><div class="adm-section-head"><div><h3>Zespoły liderów</h3><p>Działy są zwinięte, a zespołem zarządzasz z poziomu przycisku na kaflu.</p></div><button class="btn btn-outline btn-sm" onclick="loadSeedData()">Wczytaj demo</button></div><div class="adm-team-single">'+adminOrgHtml()+'</div>';
+  h+='<section class="adm-section"><div class="adm-section-head"><div><h3>Zespoły liderów</h3><p>Działy są zwinięte, a zespołem zarządzasz z poziomu przycisku na kaflu.</p></div>'+(DataStore.isRemote&&DataStore.isRemote()?'':'<button class="btn btn-outline btn-sm" onclick="loadSeedData()">Wczytaj demo</button>')+'</div><div class="adm-team-single">'+adminOrgHtml()+'</div>';
   h+='</section>';
 
   h+='<section class="adm-section">';

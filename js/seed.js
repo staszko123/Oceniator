@@ -190,6 +190,11 @@ function buildDemoRegistry(org){
 
 function installDemoData(force){
   var versionKey = 'pep_demo_seed_version';
+  if(DataStore.isRemote && DataStore.isRemote()){
+    DataStore.setValue(versionKey, DEMO_SEED_VERSION);
+    if(typeof showToast === 'function') showToast('Dane demo są wyłączone w trybie Supabase','warn');
+    return false;
+  }
   if(!force && DataStore.getValue(versionKey, '') === DEMO_SEED_VERSION) return false;
   var org = buildDemoOrg();
   adminData.assessors = org.leaders.slice().sort(function(a,b){return a.localeCompare(b,'pl');});
@@ -217,11 +222,16 @@ function installDemoData(force){
 }
 
 function seedTestData(){
+  if(DataStore.isRemote && DataStore.isRemote()) return;
   if(registry.length > 0) return;
   installDemoData(true);
 }
 
 function loadSeedData(){
+  if(DataStore.isRemote && DataStore.isRemote()){
+    showToast('Dane testowe są wyłączone w trybie Supabase','warn');
+    return;
+  }
   if(!confirm('Wyczyścić bazę specjalistów, liderów i ewidencję, a potem załadować dane demo: 4 działy, 12 liderów, 120 specjalistów i 1200 kart?')) return;
   installDemoData(true);
   if(typeof buildAdmin === 'function') buildAdmin();

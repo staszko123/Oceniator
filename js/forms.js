@@ -344,7 +344,7 @@ function buildEntry(p){
   const oce=document.getElementById(`${p}-oce`)?.value||'';
   const person=(typeof findPersonByAnyName==='function')?findPersonByAnyName(spec):null;
   return{
-    id:Date.now(),p,status:'submitted',locked:false,createdAt:new Date().toISOString(),
+    id:(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():String(Date.now())),p,status:'submitted',locked:false,createdAt:new Date().toISOString(),
     spec,stand,dzial,oce,
     specId:person?String(person.id):(typeof idForAdminItem==='function'?idForAdminItem('specialists',spec):''),
     leaderId:person&&person.leaderId?person.leaderId:(typeof idForAdminItem==='function'?idForAdminItem('assessors',oce):''),

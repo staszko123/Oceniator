@@ -1,8 +1,10 @@
 initTheme();
 loadRegistry();
 loadAdminData();
-installDemoData(false);
-if(registry.length===0){seedTestData();seedAdminFromRegistry();}
+if(!DataStore.isRemote || !DataStore.isRemote()){
+  installDemoData(false);
+  if(registry.length===0){seedTestData();seedAdminFromRegistry();}
+}
 restoreDraftsOnBoot();
 ['r','m','s'].forEach(buildForm);
 buildEwidencjaTab();

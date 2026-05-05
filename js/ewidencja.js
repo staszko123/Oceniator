@@ -131,6 +131,7 @@ function renderEwTable(rows){
 }
 // EWIDENCJA render bootstrap
 function buildEwidencjaTab(){
+  var remoteMode=DataStore.isRemote&&DataStore.isRemote();
   document.getElementById('wrap-ew').innerHTML=`
     <div class="ew-top">
       <div class="ew-stat"><div class="ew-stat-lbl">Łącznie kart</div><div class="ew-stat-val" id="ew-stat-total">0</div><div class="ew-stat-sub">w widoku</div></div>
@@ -156,9 +157,9 @@ function buildEwidencjaTab(){
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
         <button class="btn btn-dark btn-sm" onclick="exportXLS()">⬇ Excel</button>
         <button class="btn btn-dark btn-sm" onclick="exportJSON()">⬇ JSON</button>
-        <button class="btn btn-outline btn-sm" onclick="openModal('import-modal')">📥 Import</button>
+        ${remoteMode?'':'<button class="btn btn-outline btn-sm" onclick="openModal(&quot;import-modal&quot;)">📥 Import</button>'}
         <button id="sp-btn" class="btn btn-dark btn-sm" onclick="openInSharePoint()" style="display:none">📤 SharePoint</button>
-        <button class="btn btn-outline btn-sm" onclick="loadSeedData()">🧪 Dane testowe</button>
+        ${remoteMode?'':'<button class="btn btn-outline btn-sm" onclick="loadSeedData()">🧪 Dane testowe</button>'}
         <button class="btn btn-danger btn-sm" onclick="clearReg()">🗑 Wyczyść</button>
       </div>
     </div>
@@ -243,12 +244,20 @@ function restoreEntry(id){
   delete e.previousStatus;
   saveRegistry();updateBadge();renderEw();logChange('Archiwizacja','Przywrócono kartę: '+(e.spec||''));showToast('Karta przywrócona','ok');
 }
-function deleteEntry(id){
+async function deleteEntry(id){
   const e=registry.find(r=>r.id===id);
   if(!e||!entryInScope(e)||entryStatus(e)==='approved'||!can('hardDelete')){showToast('Tylko administrator może trwale usuwać niezatwierdzone karty','warn');return;}
   if(!confirm('Usunąć tę kartę trwale? Lepiej użyć archiwizacji, jeśli karta ma zostać w historii.')) return;
+  try{
+    if(DataStore.deleteRegistryEntry) await DataStore.deleteRegistryEntry(id);
+  }catch(err){
+    console.warn('[Ewidencja] Nie udało się usunąć karty z Supabase:',err);
+    showToast('Nie udało się usunąć karty z Supabase','err');
+    return;
+  }
   registry=registry.filter(r=>r.id!==id);
-  saveRegistry();updateBadge();renderEw();logChange('Usunięcie','Trwale usunięto kartę: '+(e.spec||''));showToast('Karta usunięta trwale');
+  if(!DataStore.isRemote || !DataStore.isRemote()) saveRegistry();
+  updateBadge();renderEw();logChange('Usunięcie','Trwale usunięto kartę: '+(e.spec||''));showToast('Karta usunięta trwale');
 }
 function copyRow(id){
   const e=registry.find(r=>r.id===id);if(!e||!entryInScope(e)) return;

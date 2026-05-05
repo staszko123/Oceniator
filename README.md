@@ -1,16 +1,16 @@
 # Oceniator
 
-Oceniator to lokalna aplikacja webowa do oceny jakości obsługi w kanałach telefonicznych i e-mail. System obsługuje karty oceny rozmów, maili oraz działań w systemach, a także ewidencję, dashboardy, raporty i panel administracyjny.
+Oceniator to statyczna aplikacja webowa do oceny jakości obsługi w kanałach telefonicznych, e-mail i systemowych. Aplikacja działa lokalnie lub z GitHub Pages, a dane produkcyjne są przechowywane w Supabase.
 
 ## Funkcje
 
 - Formularze oceny rozmów, maili i działań w systemach.
 - Ewidencja zapisanych kart z filtrowaniem, statusem, eksportem i podglądem.
-- Dashboard jakości z widokami dla administratora oraz lidera.
+- Dashboard jakości z widokami dla administratora, dyrektora, lidera i oceniającego.
 - Raporty CSV/PDF z podglądem danych przed eksportem.
-- Lokalny system logowania z rolami: administrator, dyrektor, lider, oceniający i podgląd.
-- Panel administracyjny do zarządzania użytkownikami, rolami, specjalistami, liderami, działami, stanowiskami, celami i okresami.
-- Struktura organizacyjna oparta o stabilne identyfikatory, dzięki czemu zmiana nazwy lidera lub specjalisty nie zrywa relacji w danych.
+- Logowanie przez Supabase Auth.
+- Panel administracyjny do zarządzania profilami użytkowników, rolami, specjalistami, działami, stanowiskami, celami i okresami.
+- Dane demo oraz import lokalny są wyłączone w trybie Supabase, żeby nie mieszać danych testowych z produkcyjnymi.
 
 ## Uruchomienie lokalne
 
@@ -26,37 +26,66 @@ Następnie otwórz:
 http://127.0.0.1:8080/
 ```
 
-## Konta startowe
+## Supabase
 
-| Login | Hasło | Rola |
-| --- | --- | --- |
-| `admin` | `admin123` | Administrator |
-| `dyrektor` | `dyrektor123` | Dyrektor |
-| `lider01` | `lider123` | Lider demo |
-| `lider02` | `lider123` | Lider demo |
-| `lider` | `lider123` | Alias pierwszego lidera |
-| `podglad` | `podglad123` | Podgląd |
+Konfiguracja klienta znajduje się w `js/supabase-config.js`. W repozytorium może znajdować się tylko publiczny anon key. Klucza `service_role` nie należy dodawać do kodu frontendowego.
 
-Konta i role można edytować w panelu administracyjnym w sekcji użytkowników.
+Schemat bazy i skrypty pomocnicze są w katalogu `supabase/`:
+
+- `rls_hardening.sql` - polityki RLS i funkcje pomocnicze.
+- `delete_demo_cards.sql` - czyszczenie kart demo z tabeli `assessments`.
+- `set_jakub_admin.sql` - przykład nadania roli administratora wskazanemu profilowi.
+- `set_jakub_password.sql` - przykład ustawienia hasła po stronie Supabase Auth.
+- `functions/admin-users/` - Edge Function do tworzenia kont Auth z panelu administratora.
+
+Wdrożenie funkcji użytkowników:
+
+```powershell
+supabase functions deploy admin-users
+```
+
+Funkcja wymaga standardowych zmiennych środowiskowych Supabase, w tym `SUPABASE_SERVICE_ROLE_KEY`, po stronie Supabase. Tego klucza nie wolno dodawać do `js/supabase-config.js`.
+
+## Użytkownicy
+
+Po wdrożeniu Edge Function konto można utworzyć z panelu administracyjnego Oceniatora. Formularz tworzy konto w Supabase Auth oraz odpowiadający profil w tabeli `profiles`. Bez podania hasła tymczasowego Supabase wyśle zaproszenie email.
+
+Dalsze zarządzanie odbywa się w panelu administracyjnym:
+
+- rola,
+- zakres lidera,
+- aktywność konta,
+- imię i nazwisko.
 
 ## Dane
 
-Dane aplikacji są przechowywane lokalnie w przeglądarce przez `localStorage`. W panelu administratora można wczytać dane demo obejmujące działy, liderów, specjalistów i karty ocen.
+W trybie Supabase ewidencja, słowniki, cele i profile są pobierane z bazy. LocalStorage zostaje tylko jako mechanizm pomocniczy dla ustawień UI, sesji roboczej i zgodności ze starym trybem lokalnym.
+
+Jeśli aplikacja była wcześniej używana lokalnie, panel administracyjny może pokazać narzędzia migracji. Po przeniesieniu danych do Supabase lokalne dane produkcyjne można wyczyścić.
 
 ## Struktura projektu
 
 - `index.html` - główny szkielet aplikacji.
 - `css/` - style interfejsu.
-- `js/defs.js` - definicje formularzy i konfiguracja bazowa.
-- `js/state.js` - stan aplikacji, migracje i uprawnienia.
+- `js/supabase-config.js` - konfiguracja Supabase.
+- `js/dataStore.js` - warstwa danych local/Supabase.
+- `js/auth-module.js` - logowanie i sesja użytkownika.
 - `js/forms.js` - formularze ocen.
-- `js/ewidencja.js` - widok ewidencji.
+- `js/ewidencja.js` i `js/ewidencja-premium.js` - widok ewidencji.
 - `js/dashboard.js` - dashboardy i analityka.
 - `js/raporty.js` - raporty i eksporty.
 - `js/admin.js` - panel administracyjny.
-- `js/auth-module.js` - logowanie i role.
-- `js/seed.js` - generator danych demo.
+- `js/seed.js` - dane demo, blokowane w trybie Supabase.
 
-## Uwagi techniczne
+## Weryfikacja
 
-Projekt nie ma obecnie skonfigurowanego bundlera ani test runnera. Podstawowa weryfikacja polega na uruchomieniu aplikacji lokalnie, przejściu przez logowanie, panel administracyjny, formularze i raporty oraz sprawdzeniu `git diff --check`.
+Podstawowa weryfikacja po zmianach:
+
+```powershell
+$node='C:\Users\stanl\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
+& $node --check js\admin.js
+& $node --check js\dataStore.js
+& $node --check js\ewidencja.js
+& $node --check js\seed.js
+git diff --check
+```

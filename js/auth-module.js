@@ -20,6 +20,177 @@ export function authInit(){
     if(typeof updateRoleBadge==='function') updateRoleBadge();
   }
 
+  function refreshAuthedViews(){
+    if(typeof updateRoleBadge==='function') updateRoleBadge();
+    if(typeof updateBadge==='function') updateBadge();
+    if(typeof buildForm==='function') ['r','m','s'].forEach(buildForm);
+    if(document.getElementById('tab-ewidencja')?.classList.contains('on') && typeof renderEw==='function') renderEw();
+    if(document.getElementById('tab-myteam')?.classList.contains('on') && typeof buildMyTeam==='function') buildMyTeam();
+    if(document.getElementById('tab-dashboard')?.classList.contains('on') && typeof buildDashboard==='function') buildDashboard();
+    if(document.getElementById('tab-raporty')?.classList.contains('on') && typeof buildRaporty==='function') buildRaporty();
+    if(document.getElementById('tab-admin')?.classList.contains('on') && !can('adminConfig')) switchTab('ewidencja');
+  }
+
+  function renderUserBar(u){
+    injectStyle();
+    const bar=document.querySelector('.page-bar');
+    if(!bar) return;
+    const old=document.getElementById('oc-userbar');
+    if(old) old.remove();
+    const box=document.createElement('div');
+    box.id='oc-userbar';
+    box.className='oc-userbar';
+    box.innerHTML='<span class="oc-user-pill">👤 '+escHtml(u.n||u.email||u.l)+' · '+escHtml(roles[u.r]||u.r)+'</span><button class="oc-logout" onclick="authLogout()">Wyloguj</button>';
+    bar.appendChild(box);
+  }
+
+  function applySupabaseProfile(profile,user){
+    const role=(profile&&profile.role)||'viewer';
+    const fullName=(profile&&profile.full_name)||user.email||'Użytkownik';
+    const leaderScope=(profile&&profile.leader_scope)||'';
+    const leaderId=leaderScope&&typeof idForAdminItem==='function'?idForAdminItem('assessors',leaderScope):'';
+    if(typeof normalizeAdminData==='function') normalizeAdminData();
+    if(window.adminData) adminData.access.role=role;
+    window.currentRole=role;
+    window.currentUserData={
+      id:user.id,
+      l:user.email||user.id,
+      email:user.email||'',
+      n:fullName,
+      r:role,
+      leaderScope:leaderScope,
+      leaderId:leaderId,
+      supabase:true
+    };
+    refreshAuthedViews();
+    renderUserBar(window.currentUserData);
+  }
+
+  async function refreshRemoteDataAfterAuth(){
+    try{
+      if(DataStore.fetchAdmin){
+        const remoteAdmin=await DataStore.fetchAdmin();
+        if(remoteAdmin&&window.adminData){
+          Object.assign(adminData,remoteAdmin);
+          if(typeof normalizeAdminData==='function') normalizeAdminData();
+        }
+      }
+      if(DataStore.fetchRegistry){
+        const remoteRegistry=await DataStore.fetchRegistry();
+        if(Array.isArray(remoteRegistry)){
+          window.registry=remoteRegistry;
+          try{registry=remoteRegistry;}catch(e){}
+          if(typeof normalizeRegistry==='function') normalizeRegistry();
+        }
+      }
+      refreshAuthedViews();
+    }catch(e){
+      console.warn('[Auth] Nie udało się odświeżyć danych z Supabase:',e);
+    }
+  }
+
+  async function loadSupabaseProfile(sb,user){
+    const res=await sb.from('profiles').select('id,full_name,email,role,leader_scope,is_active').eq('id',user.id).single();
+    if(res.error) throw res.error;
+    if(res.data&&res.data.is_active===false) throw new Error('Konto jest nieaktywne.');
+    return res.data;
+  }
+
+  async function finishSupabaseSession(sb,session){
+    if(!session||!session.user){
+      setUnauthenticated();
+      supabaseLoginUI();
+      return;
+    }
+    try{
+      const profile=await loadSupabaseProfile(sb,session.user);
+      const old=document.getElementById('oc-login-screen');
+      if(old) old.remove();
+      applySupabaseProfile(profile,session.user);
+      await refreshRemoteDataAfterAuth();
+    }catch(e){
+      console.warn('[Auth] Profil Supabase:',e);
+      await sb.auth.signOut();
+      setUnauthenticated();
+      supabaseLoginUI('Nie udało się pobrać aktywnego profilu użytkownika.');
+    }
+  }
+
+  function supabaseLoginUI(message){
+    injectStyle();
+    const old=document.getElementById('oc-login-screen');
+    if(old) old.remove();
+    const d=document.createElement('div');
+    d.id='oc-login-screen';
+    d.className='oc-login-screen';
+    d.innerHTML=`
+      <div class="oc-login-wrap">
+        <section class="oc-welcome" aria-label="Ekran powitalny">
+          <div>
+            <div class="oc-kicker">System Oceny Jakości</div>
+            <h1 class="oc-title">Oceniator z bezpiecznym logowaniem Supabase</h1>
+            <p class="oc-lead">Zaloguj się kontem utworzonym w Supabase. Rola i zakres lidera są pobierane z tabeli profili, a dane kart z zabezpieczonych tabel.</p>
+            <div class="oc-login-actions">
+              <div class="oc-tile"><div class="oc-tile-ico">✓</div><div class="oc-tile-title">Role z bazy</div><div class="oc-tile-txt">Uprawnienia wynikają z profilu użytkownika.</div></div>
+              <div class="oc-tile"><div class="oc-tile-ico">●</div><div class="oc-tile-title">RLS</div><div class="oc-tile-txt">Supabase ogranicza odczyt i zapis po sesji.</div></div>
+              <div class="oc-tile"><div class="oc-tile-ico">↑</div><div class="oc-tile-title">Dane w chmurze</div><div class="oc-tile-txt">Karty oceny trafiają do tabeli assessments.</div></div>
+              <div class="oc-tile"><div class="oc-tile-ico">◇</div><div class="oc-tile-title">Fallback lokalny</div><div class="oc-tile-txt">Działa tylko po wyłączeniu Supabase w konfiguracji.</div></div>
+            </div>
+          </div>
+          <div class="oc-footer-note">Sesja jest obsługiwana przez Supabase Auth.</div>
+        </section>
+        <section class="oc-login-card" aria-label="Logowanie">
+          <h2 class="oc-card-title">Zaloguj się</h2>
+          <p class="oc-card-sub">Użyj emaila i hasła konta Supabase. Po pierwszym logowaniu administrator powinien nadać rolę w profilu.</p>
+          <form onsubmit="window._login(event)">
+            <div class="oc-field"><label>Email</label><input id="l" type="email" placeholder="imie.nazwisko@firma.pl" autocomplete="username" autofocus></div>
+            <div class="oc-field"><label>Hasło</label><input id="p" type="password" placeholder="Hasło Supabase" autocomplete="current-password"></div>
+            <button class="oc-login-btn" type="submit">Wejdź do aplikacji</button>
+            <button class="oc-login-btn" type="button" onclick="window._magicLogin()" style="margin-top:10px;background:#1B2E4B">Wyślij link logowania</button>
+            <div class="oc-error" id="oc-login-error" style="${message?'display:block':''}">${escHtml(message||'Nieprawidłowy email lub hasło.')}</div>
+          </form>
+          <div class="oc-demo"><strong>Tryb produkcyjny:</strong><br>Konta lokalne i hasła demo nie są używane, gdy Supabase jest włączone.</div>
+        </section>
+      </div>`;
+    document.body.appendChild(d);
+  }
+
+  async function supabaseAuthInit(){
+    const sb=DataStore.sb&&DataStore.sb();
+    if(!sb){setUnauthenticated();supabaseLoginUI('Nie udało się zainicjalizować klienta Supabase.');return;}
+    window._login=async function(ev){
+      if(ev) ev.preventDefault();
+      const email=document.getElementById('l')?.value.trim();
+      const password=document.getElementById('p')?.value||'';
+      const er=document.getElementById('oc-login-error');
+      if(er) er.style.display='none';
+      const res=await sb.auth.signInWithPassword({email,password});
+      if(res.error){
+        if(er){er.textContent=res.error.message||'Nieprawidłowy email lub hasło.';er.style.display='block';}
+        return;
+      }
+      await finishSupabaseSession(sb,res.data.session);
+    };
+    window._magicLogin=async function(){
+      const email=document.getElementById('l')?.value.trim();
+      const er=document.getElementById('oc-login-error');
+      if(!email){if(er){er.textContent='Wpisz email, aby wysłać link logowania.';er.style.display='block';}return;}
+      const res=await sb.auth.signInWithOtp({email,emailRedirectTo:window.location.href.split('#')[0]});
+      if(er){
+        er.textContent=res.error?(res.error.message||'Nie udało się wysłać linku.'):'Wysłano link logowania. Sprawdź skrzynkę email.';
+        er.style.display='block';
+      }
+    };
+    window.authLogout=async function(){
+      await sb.auth.signOut();
+      setUnauthenticated();
+      location.reload();
+    };
+    const res=await sb.auth.getSession();
+    if(res.error||!res.data.session){setUnauthenticated();supabaseLoginUI();return;}
+    await finishSupabaseSession(sb,res.data.session);
+  }
+
   function demoLeaderUsers(){
     const org=typeof window.buildDemoOrg==='function'?window.buildDemoOrg():{leaders:[]};
     const aliases=Object.assign({},(window.adminData&&adminData.aliases&&adminData.aliases.assessors)||{});
@@ -150,6 +321,11 @@ export function authInit(){
         </section>
       </div>`;
     document.body.appendChild(d);
+  }
+
+  if(DataStore.isRemote&&DataStore.isRemote()){
+    supabaseAuthInit();
+    return;
   }
 
   window._login=function(ev){
