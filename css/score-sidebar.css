@@ -19,7 +19,7 @@
 @keyframes scorePulse{0%{transform:scale(1);}35%{transform:scale(1.08);}100%{transform:scale(1);}}
 
 @media(min-width:1180px){
-  .wrap{max-width:none;padding-left:22px;padding-right:376px;}
+  .wrap{max-width:none;padding-left:22px;padding-right:348px;}
 
   .form-workspace{
     grid-template-columns:265px minmax(0,1fr);
@@ -59,8 +59,9 @@
   }
 
   .form-main>.act-bar,
-  .form-main>.res-panel{
-    width:330px;
+  .form-main>.res-panel,
+  .form-main>.skill-panel{
+    width:304px;
   }
 
   .form-main>.act-bar{
@@ -81,13 +82,24 @@
 
   .form-main>.res-panel{
     position:fixed;
-    top:322px;
+    top:286px;
     right:18px;
-    bottom:18px;
+    bottom:238px;
     z-index:79;
     max-height:none;
     overflow:auto;
     margin:0;
+  }
+
+  .form-main>.skill-panel{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:78;
+    margin:0;
+    padding:12px;
+    max-height:208px;
+    overflow:auto;
   }
 
   .form-main>.res-panel .res-grid{display:grid;grid-template-columns:1fr;}

@@ -92,6 +92,11 @@ function attachPanel(type) {
   if (!wrap || document.getElementById(type + '-skill-panel')) return;
   const main = wrap.querySelector('.form-main');
   if (!main) return;
+  const resultPanel = main.querySelector('.res-panel');
+  if (resultPanel) {
+    resultPanel.insertAdjacentHTML('afterend', buildSkillPanel(type));
+    return;
+  }
   const card = main.querySelector('.card');
   if (!card) return;
   card.insertAdjacentHTML('afterend', buildSkillPanel(type));
