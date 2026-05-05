@@ -105,11 +105,11 @@ function renderEwTable(rows){
     const statusAction=archived?'restoreEntry':'advanceEntryStatus';
     return `<tr style="${archived?'opacity:.62':''}">
       <td class="mu">${i+1}</td>
-      <td><strong>${e.spec}</strong><br><span class="mu">${e.dzial||''}</span></td>
+      <td><strong>${escHtml(e.spec)}</strong><br><span class="mu">${escHtml(e.dzial||'')}</span></td>
       <td><span class="ebadge ${tc}">${TL[e.p]}</span></td>
       <td><span class="ebadge" style="background:var(--navy-pale);color:var(--navy)">${e.period||'—'}</span></td>
       <td class="mu">${e.data}</td>
-      <td class="mu">${e.oce||'—'}</td>
+      <td class="mu">${escHtml(e.oce||'—')}</td>
       <td class="r epct ${e.secAvg[sk[0]]>=92?'ep-great':e.secAvg[sk[0]]>=82?'ep-good':'ep-below'}">${e.secAvg[sk[0]]}%</td>
       <td class="r epct ${e.secAvg[sk[1]]>=92?'ep-great':e.secAvg[sk[1]]>=82?'ep-good':'ep-below'}">${e.secAvg[sk[1]]}%</td>
       <td class="r epct ${e.secAvg[sk[2]]>=92?'ep-great':e.secAvg[sk[2]]>=82?'ep-good':'ep-below'}">${e.secAvg[sk[2]]}%</td>
@@ -283,7 +283,7 @@ function exportXLS(){
   const hdr=['Lp','Specjalista','Stanowisko','Dział','Typ karty','Okres','Data oceny','Oceniający','Sekcja 1 (%)','Sekcja 2 (%)','Sekcja 3 (%)','Wynik końcowy (%)','Ocena','Status'];
   let h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table>';
   h+='<tr style="background:#1B2E4B;color:white;font-weight:bold">'+hdr.map(v=>`<th>${v}</th>`).join('')+'</tr>';
-  rows.forEach((e,i)=>{const sk=SK[e.p];const bg=e.rating==='great'?'#DCFCE7':e.rating==='good'?'#FEF3C7':'#FEE2E2';const vals=[i+1,e.spec,e.stand,e.dzial,TL[e.p],e.period||'',e.data,e.oce,e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating),entryStatusLabel(e)];h+=`<tr>${vals.map((v,vi)=>`<td style="${vi===11?'background:'+bg+';font-weight:bold':''}">${v}</td>`).join('')}</tr>`;});
+  rows.forEach((e,i)=>{const sk=SK[e.p];const bg=e.rating==='great'?'#DCFCE7':e.rating==='good'?'#FEF3C7':'#FEE2E2';const vals=[i+1,escHtml(e.spec),escHtml(e.stand||''),escHtml(e.dzial||''),TL[e.p],e.period||'',e.data,escHtml(e.oce||''),e.secAvg[sk[0]]+'%',e.secAvg[sk[1]]+'%',e.secAvg[sk[2]]+'%',e.avgFinal+'%',ratingLabel(e.rating),entryStatusLabel(e)];h+=`<tr>${vals.map((v,vi)=>`<td style="${vi===11?'background:'+bg+';font-weight:bold':''}">${v}</td>`).join('')}</tr>`;});
   h+='</table></body></html>';dl('Ewidencja_Ocen_PeP_P24.xls','application/vnd.ms-excel',h);showToast('Excel zapisany','ok');
 }
 function exportJSON(){

@@ -6,9 +6,8 @@
 // ADMIN PANEL
 // ══════════════════════════════════════════════
 
-function escHtml(v){
-  return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
-}
+// escHtml zdefiniowany w state.js — tu zostawiamy alias dla pewności
+if(typeof escHtml==='undefined'){window.escHtml=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};}
 function optsHtml(items,sel){
   return '<option value="">— wybierz —</option>'+items.map(function(v){return '<option value="'+escHtml(v)+'" '+(v===sel?'selected':'')+'>'+escHtml(v)+'</option>';}).join('');
 }
