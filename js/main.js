@@ -20,7 +20,8 @@ updateRoleBadge();
 
 function lockUntilAuth(){
   if(window.currentUserData) return;
-  if(window.adminData&&adminData.access) adminData.access.role='viewer';
+  normalizeAdminData(); // gwarantuje że adminData.access istnieje
+  adminData.access.role='viewer';
   window.currentRole='viewer';
   updateRoleBadge();
 }

@@ -13,9 +13,10 @@ export function authInit(){
   }
 
   function setUnauthenticated(){
-    if(window.adminData&&adminData.access) adminData.access.role='viewer';
+    if(typeof normalizeAdminData==='function') normalizeAdminData();
+    if(window.adminData) adminData.access.role='viewer';
     window.currentRole='viewer';
-    window.currentUserData=null;
+    window.currentUserData=null; // null = auth sprawdził i nie znalazł sesji
     if(typeof updateRoleBadge==='function') updateRoleBadge();
   }
 

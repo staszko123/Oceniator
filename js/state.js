@@ -255,7 +255,13 @@ var PERM_LABELS=[
   ['export','Eksport CSV'],
   ['pdf','Raport PDF']
 ];
-function activeRole(){normalizeAdminData();return adminData.access.role||'admin';}
+function activeRole(){
+  normalizeAdminData();
+  // currentUserData===null oznacza że auth sprawdził sesję i jej nie ma → viewer
+  if(window.currentUserData===null) return 'viewer';
+  // fallback viewer (nie admin) — fail-closed
+  return adminData.access.role||'viewer';
+}
 function can(action){
   var perms=getRolePerms(activeRole());
   return perms.indexOf(action)>-1;
