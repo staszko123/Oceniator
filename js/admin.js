@@ -59,7 +59,7 @@ function seedAdminFromRegistry(){
   });
   ensureStableRelations();
 }
-function buildAdmin(){
+function buildAdminLegacyUnused(){
   normalizeAdminData();
   var wrap=document.getElementById('wrap-admin');
   if(!wrap) return;
@@ -651,7 +651,7 @@ function admSelectTeam(leader){
   var el=document.getElementById('adm-team-select');
   if(el) el.scrollIntoView({block:'nearest'});
 }
-function adminOrgHtml(){
+function adminOrgHtmlLegacyUnused(){
   var teams=adminTeamCards();
   if(!teams.length) return '<div class="adm-empty">Brak zespołów do pokazania.</div>';
   var byDept={};

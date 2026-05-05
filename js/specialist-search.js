@@ -1,45 +1,8 @@
 export function initSpecialistSearch(){
 
-  function normalize(v){
-    return String(v||'').toLowerCase().trim();
-  }
-
   function getPeople(){
-    let people=[];
-
-    if(window.adminData?.people?.length){
-      people=adminData.people.filter(p=>p.active!==false);
-    }else{
-      people=(window.getSpecialistOptions?.()||[]).map(n=>({name:n}));
-    }
-
-    const scope=(typeof activeLeaderScope==='function')?activeLeaderScope():'';
-    if(scope){
-      people=people.filter(p=>normalize(p.leader)===normalize(scope));
-      return people;
-    }
-
-    const role=normalize(window.currentRole||activeRole());
-    const user=window.currentUserData||((typeof window.currentUser==='function')?window.currentUser():null)||{};
-
-    const userName=normalize(user.name||user.fullName||user.n||'');
-    const userEmail=normalize(user.email||'');
-
-    if(role.includes('leader') || role.includes('lider') || role.includes('assessor')){
-      people=people.filter(p=>{
-        const leaderName=normalize(p.leader);
-        const managerName=normalize(p.manager);
-        const leaderEmail=normalize(p.leaderEmail);
-
-        return (
-          leaderName===userName ||
-          managerName===userName ||
-          leaderEmail===userEmail
-        );
-      });
-    }
-
-    return people;
+    // Use the same scoped list as forms and state
+    return activePeople();
   }
 
   function safeRegExp(v){

@@ -3,6 +3,22 @@ export function authInit(){
   const sessionKey='oc_session_v1';
   const roles={admin:'Administrator',director:'Dyrektor',leader:'Lider',assessor:'Oceniający',viewer:'Podgląd'};
 
+  function safeJson(key,fallback){
+    try{
+      return JSON.parse(DataStore.getValue(key,JSON.stringify(fallback))||JSON.stringify(fallback));
+    }catch(e){
+      DataStore.setValue(key,null);
+      return fallback;
+    }
+  }
+
+  function setUnauthenticated(){
+    if(window.adminData&&adminData.access) adminData.access.role='viewer';
+    window.currentRole='viewer';
+    window.currentUserData=null;
+    if(typeof updateRoleBadge==='function') updateRoleBadge();
+  }
+
   function demoLeaderUsers(){
     const org=typeof window.buildDemoOrg==='function'?window.buildDemoOrg():{leaders:[]};
     const aliases=Object.assign({},(window.adminData&&adminData.aliases&&adminData.aliases.assessors)||{});
@@ -54,7 +70,7 @@ export function authInit(){
   }
 
   function users(){
-    let u=JSON.parse(DataStore.getValue(usersKey,'null')||'null');
+    let u=safeJson(usersKey,null);
     if(!u){
       u=[
         {id:1,l:'admin',p:'admin123',r:'admin',n:'Administrator systemu'},
@@ -69,7 +85,7 @@ export function authInit(){
     return u;
   }
 
-  function session(){return JSON.parse(DataStore.getValue(sessionKey,'null')||'null');}
+  function session(){return safeJson(sessionKey,null);}
 
   function injectStyle(){
     if(document.getElementById('oc-login-style')) return;
@@ -155,10 +171,10 @@ export function authInit(){
   };
 
   const s=session();
-  if(!s){loginUI();return;}
+  if(!s){setUnauthenticated();loginUI();return;}
 
   const u=users().find(x=>x.id===s.id);
-  if(!u){loginUI();return;}
+  if(!u){setUnauthenticated();DataStore.setValue(sessionKey,null);loginUI();return;}
 
   adminData.access.role=u.r;
   window.currentRole=u.r;

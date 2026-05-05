@@ -36,6 +36,13 @@ function renderCharts(rows){
     document.getElementById('ew-charts-wrap').style.display='none';return;
   }
   document.getElementById('ew-charts-wrap').style.display='';
+  if(typeof Chart==='undefined'){
+    if(typeof chartAvailable==='function'){
+      chartAvailable('chart-spec');
+      chartAvailable('chart-trend');
+    }
+    return;
+  }
   const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const textCol=isDark?'#94A3B8':'#64748B';
   const gridCol=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';

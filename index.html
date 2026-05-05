@@ -120,58 +120,109 @@
     <main class="main">
       <div id="tab-start"     class="panel on">
         <section class="start-screen" id="start-screen" aria-label="Ekran startowy">
-          <div class="start-inner">
-            <div class="start-copy">
-              <div class="start-kicker">System Oceny Jakości</div>
-              <h1 class="start-title">Oceniator dla kontroli jakości PeP i P24</h1>
-              <p class="start-lead">Rozpocznij ocenę rozmów, maili lub działań w systemach, a później przejdź do ewidencji, dashboardu i raportów bez przełączania narzędzi.</p>
-              <div class="start-actions">
-                <button class="start-primary" onclick="enterApp('rozmowy')">Rozpocznij pracę</button>
-                <button class="start-secondary" id="continue-draft-btn" onclick="continueDraft()" style="display:none">Kontynuuj szkic</button>
-                <button class="start-secondary" onclick="enterApp('dashboard')">Zobacz dashboard</button>
+          <div class="start-header">
+            <div class="start-welcome">
+              <div class="start-welcome-icon">🎯</div>
+              <div class="start-welcome-content">
+                <h1 class="start-welcome-title">Witaj w Oceniatorze!</h1>
+                <p class="start-welcome-subtitle">System do kompleksowej oceny jakości obsługi klienta</p>
               </div>
-              <div class="start-welcome-panel" aria-label="Panel powitalny">
-                <div>
-                  <span class="start-welcome-label">Dzień dobry</span>
-                  <strong>Miło Cię widzieć w Oceniatorze.</strong>
-                  <span>Najważniejsze widoki masz pod ręką, a szkice i ewidencja zostają w bieżącej przeglądarce.</span>
+            </div>
+            <div class="start-quick-stats" id="start-quick-stats">
+              <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                  <div class="stat-value" id="stat-today">0</div>
+                  <div class="stat-label">Ocen dziś</div>
                 </div>
-                <div class="start-welcome-stats">
-                  <span><b>3</b> typy ocen</span>
-                  <span><b>1</b> wspólny rejestr</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                  <div class="stat-value" id="stat-avg">0%</div>
+                  <div class="stat-label">Średnia ocena</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                  <div class="stat-value" id="stat-total">0</div>
+                  <div class="stat-label">Wszystkie karty</div>
                 </div>
               </div>
             </div>
-            <div class="start-panel" aria-label="Skróty startowe">
-              <div class="start-panel-head">
-                <div class="start-panel-title">Wybierz obszar pracy</div>
-                <div class="start-panel-pill">Start</div>
+          </div>
+
+          <div class="start-main">
+            <div class="start-actions-section">
+              <h2 class="section-title">Rozpocznij pracę</h2>
+              <p class="section-subtitle">Wybierz typ oceny lub przejrzyj istniejące dane</p>
+              <div class="start-action-buttons">
+                <button class="action-btn primary" onclick="enterApp('rozmowy')">
+                  <div class="action-icon">📞</div>
+                  <div class="action-content">
+                    <div class="action-title">Nowa ocena rozmowy</div>
+                    <div class="action-desc">Rozpocznij ocenę jakości kontaktu telefonicznego</div>
+                  </div>
+                  <div class="action-arrow">→</div>
+                </button>
+                <button class="action-btn secondary" onclick="enterApp('maile')">
+                  <div class="action-icon">✉️</div>
+                  <div class="action-content">
+                    <div class="action-title">Ocena maili</div>
+                    <div class="action-desc">Sprawdź jakość odpowiedzi pisemnych</div>
+                  </div>
+                  <div class="action-arrow">→</div>
+                </button>
+                <button class="action-btn secondary" onclick="enterApp('systemy')">
+                  <div class="action-icon">🖥️</div>
+                  <div class="action-content">
+                    <div class="action-title">Działania w systemach</div>
+                    <div class="action-desc">Oceń poprawność operacji</div>
+                  </div>
+                  <div class="action-arrow">→</div>
+                </button>
               </div>
-              <div class="start-tiles">
-                <button class="start-tile" onclick="enterApp('rozmowy')">
-                  <span class="start-tile-icon">📞</span>
-                  <span class="start-tile-name">Ocena rozmów</span>
-                  <span class="start-tile-desc">Karta jakości dla kontaktów telefonicznych.</span>
-                </button>
-                <button class="start-tile" onclick="enterApp('maile')">
-                  <span class="start-tile-icon">✉️</span>
-                  <span class="start-tile-name">Ocena maili</span>
-                  <span class="start-tile-desc">Weryfikacja odpowiedzi pisemnych i kompletności spraw.</span>
-                </button>
-                <button class="start-tile" onclick="enterApp('systemy')">
-                  <span class="start-tile-icon">🖥️</span>
-                  <span class="start-tile-name">Działania w Systemach</span>
-                  <span class="start-tile-desc">Ocena poprawności działań operacyjnych.</span>
-                </button>
-                <button class="start-tile" onclick="enterApp('ewidencja')">
-                  <span class="start-tile-icon">📋</span>
-                  <span class="start-tile-name">Ewidencja</span>
-                  <span class="start-tile-desc">Przegląd zapisanych kart, filtrów i eksportów.</span>
-                </button>
+            </div>
+
+            <div class="start-sidebar">
+              <div class="recent-activity" id="recent-activity">
+                <h3 class="activity-title">Ostatnie aktywności</h3>
+                <div class="activity-list" id="activity-list">
+                  <div class="activity-empty">
+                    <div class="activity-empty-icon">📝</div>
+                    <div class="activity-empty-text">Brak ostatnich ocen</div>
+                    <div class="activity-empty-subtext">Rozpocznij pracę, aby zobaczyć historię</div>
+                  </div>
+                </div>
               </div>
-              <div class="start-footer">
-                <span>Dane zostają lokalnie w przeglądarce.</span>
-                <span>Do tego ekranu wrócisz z zakładki Start.</span>
+
+              <div class="quick-access">
+                <h3 class="quick-title">Szybki dostęp</h3>
+                <div class="quick-links">
+                  <button class="quick-link" onclick="enterApp('ewidencja')">
+                    <span class="quick-icon">📋</span>
+                    <span class="quick-text">Ewidencja</span>
+                  </button>
+                  <button class="quick-link" onclick="enterApp('dashboard')">
+                    <span class="quick-icon">📊</span>
+                    <span class="quick-text">Dashboard</span>
+                  </button>
+                  <button class="quick-link" onclick="enterApp('raporty')">
+                    <span class="quick-icon">📈</span>
+                    <span class="quick-text">Raporty</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="start-footer">
+            <div class="footer-content">
+              <div class="footer-icon">🔒</div>
+              <div class="footer-text">
+                <strong>Bezpieczne i lokalne</strong>
+                <span>Wszystkie dane są przechowywane wyłącznie w Twojej przeglądarce</span>
               </div>
             </div>
           </div>

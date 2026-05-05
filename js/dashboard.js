@@ -278,6 +278,14 @@ function renderDash(){
   document.getElementById('d-r3').innerHTML='<div class="dash-widget"><div class="dw-title">📈 Trend w czasie</div><div class="ch260"><canvas id="ch-trend"></canvas></div></div>';
   document.getElementById('d-r3').innerHTML+='<div class="dash-widget" style="margin-top:12px"><div class="dw-title">🔍 Porównanie specjalistów <span class="dw-sub">Wybierz 2–4 osoby (maks.)</span></div><div id="d-cmp-inner"></div></div>';
   // CHARTS
+  if(typeof Chart==='undefined'){
+    if(typeof chartAvailable==='function'){
+      chartAvailable('ch-dist');
+      chartAvailable('ch-trend');
+    }
+    renderCompare();
+    return;
+  }
   setTimeout(function(){
     var de=document.getElementById('ch-dist');
     if(de){
@@ -376,7 +384,7 @@ function renderCompare(){
         pointBackgroundColor:col,pointBorderColor:col,pointHoverRadius:7,borderWidth:2,pointRadius:5};
     });
     var ce=document.getElementById('ch-cmp');
-    if(ce){
+    if(ce&&(!window.chartAvailable||chartAvailable(ce))){
       dashCh.cmp=new Chart(ce,{
         type:'radar',
         data:{labels:labels,datasets:datasets},

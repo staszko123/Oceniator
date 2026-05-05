@@ -126,6 +126,7 @@ function buildForm(p){
              <datalist id="${specListId}">${specOptionsHtml}</datalist>` :
             `<input type="text" id="${p}-spec" value="${savedSpec}" placeholder="Imię i nazwisko" oninput="onSpecChange('${p}')">`
           }
+          ${activeLeaderScope() ? '<div class="mf-hint">Widoczni tylko specjaliści z mojego zespołu</div>' : ''}
         </div>
         <div class="mf"><label>Data oceny</label><input type="date" id="${p}-data" value="${savedData}" oninput="updatePeriod('${p}')"></div>
       </div>

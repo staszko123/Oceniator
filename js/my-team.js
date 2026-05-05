@@ -104,7 +104,9 @@ function buildMyTeam(){
 
 function renderMyTeamChart(){
   var el=document.getElementById('mt-trend');
-  if(!el || typeof Chart==='undefined') return;
+  if(!el) return;
+  if(typeof chartAvailable==='function'&&!chartAvailable(el)) return;
+  if(typeof Chart==='undefined') return;
   if(myTeamCharts.trend) myTeamCharts.trend.destroy();
   var byDate={};
   myTeamRows().forEach(function(e){

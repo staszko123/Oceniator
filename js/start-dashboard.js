@@ -1,13 +1,10 @@
 export function initStartDashboard(){
 
   function getData(){
-    return (window.getAllEntries?getAllEntries():[])||[];
+    return (window.registry ? window.registry.filter(e => !e.archived) : []) || [];
   }
 
   function render(){
-    const wrap=document.querySelector('#tab-start .start-inner');
-    if(!wrap) return;
-
     const data=getData();
     const today=new Date().toISOString().slice(0,10);
 
@@ -18,29 +15,57 @@ export function initStartDashboard(){
 
     const last=data.slice(-5).reverse();
 
-    let el=document.getElementById('start-extra');
-    if(!el){
-      el=document.createElement('div');
-      el.id='start-extra';
-      el.style.marginTop='20px';
-      el.style.gridColumn='1 / -1';
-      wrap.appendChild(el);
+    // Update quick stats
+    const statToday = document.getElementById('stat-today');
+    const statAvg = document.getElementById('stat-avg');
+    const statTotal = document.getElementById('stat-total');
+
+    if(statToday) statToday.textContent = todayList.length;
+    if(statAvg) statAvg.textContent = `${avg}%`;
+    if(statTotal) statTotal.textContent = data.length;
+
+    // Update recent activity
+    const activityList = document.getElementById('activity-list');
+    if(activityList){
+      if(last.length > 0){
+        activityList.innerHTML = last.map(entry => `
+          <div class="activity-item">
+            <div class="activity-icon">${getActivityIcon(entry.type)}</div>
+            <div class="activity-content">
+              <div class="activity-title">${entry.spec || 'Nieznany specjalista'}</div>
+              <div class="activity-meta">${formatDate(entry.data)} • ${entry.avgFinal || 0}%</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        activityList.innerHTML = `
+          <div class="activity-empty">
+            <div class="activity-empty-icon">📝</div>
+            <div class="activity-empty-text">Brak ostatnich ocen</div>
+            <div class="activity-empty-subtext">Rozpocznij pracę, aby zobaczyć historię</div>
+          </div>
+        `;
+      }
     }
+  }
 
-    el.innerHTML=`
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div class="spec-kpi"><div class="spec-kpi-lbl">Dziś</div><div class="spec-kpi-val">${todayList.length}</div></div>
-        <div class="spec-kpi"><div class="spec-kpi-lbl">Średnia</div><div class="spec-kpi-val">${avg}%</div></div>
-        <div class="spec-kpi"><div class="spec-kpi-lbl">Wszystkie</div><div class="spec-kpi-val">${data.length}</div></div>
-      </div>
+  function getActivityIcon(type){
+    switch(type){
+      case 'rozmowy': return '📞';
+      case 'maile': return '✉️';
+      case 'systemy': return '🖥️';
+      default: return '📋';
+    }
+  }
 
-      <div style="margin-top:16px" class="spec-profile-card">
-        <div class="spec-profile-card-h">Ostatnie oceny</div>
-        <div class="spec-profile-card-b">
-          ${last.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${x.spec||''}</span><b>${x.avgFinal||0}%</b></div>`).join('')}
-        </div>
-      </div>
-    `;
+  function formatDate(dateStr){
+    if(!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
   // HARD FIX: render cykliczny (pewność działania w SPA)

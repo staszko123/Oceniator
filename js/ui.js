@@ -50,7 +50,37 @@ function confirmReset(){
 }
 function clearCurrentDraft(p){
   if(!confirm('Wyczyścić szkic tego formularza? Zapisane karty w ewidencji zostaną bez zmian.')) return;
-  clearDraft(p);state[p].count=3;initState(p);buildForm(p);showToast('Szkic wyczyszczony','ok');
+  clearDraft(p);
+  state[p].count=3;
+  initState(p);
+  // Clear form fields
+  const specEl = document.getElementById(`${p}-spec`);
+  const dataEl = document.getElementById(`${p}-data`);
+  const oceEl = document.getElementById(`${p}-oce`);
+  const gnotesEl = document.getElementById(`${p}-gnotes`);
+  const goldDescEl = document.getElementById(`${p}-gold-desc`);
+  if(specEl) specEl.value = '';
+  if(dataEl) dataEl.value = new Date().toISOString().split('T')[0];
+  if(oceEl) oceEl.value = DataStore.getSavedAssessor() || '';
+  if(gnotesEl) gnotesEl.value = '';
+  if(goldDescEl) goldDescEl.value = '';
+  // Clear autofill chips
+  const afEl = document.getElementById(`${p}-af`);
+  if(afEl) afEl.style.display = 'none';
+  const afStand = document.getElementById(`${p}-af-stand`);
+  const afDzial = document.getElementById(`${p}-af-dzial`);
+  const afOce = document.getElementById(`${p}-af-oce`);
+  if(afStand) afStand.textContent = '—';
+  if(afDzial) afDzial.textContent = '—';
+  if(afOce) afOce.textContent = '—';
+  // Clear spec context
+  const specContextBody = document.getElementById(`${p}-spec-context-body`);
+  const specContextSub = document.getElementById(`${p}-spec-context-sub`);
+  if(specContextBody) specContextBody.innerHTML = '<div class="spec-empty">Wybierz specjalistę, aby zobaczyć jego wynik, realizację celu i ostatnie oceny w aktualnym periodzie.</div>';
+  if(specContextSub) specContextSub.textContent = 'Statystyki dla wybranego periodu';
+  // Rebuild form
+  buildForm(p);
+  showToast('Szkic wyczyszczony','ok');
 }
 window.addEventListener('beforeunload',function(e){
   if(!draftDirty) return;
